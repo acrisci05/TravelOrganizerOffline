@@ -1,0 +1,536 @@
+\documentclass[11pt, a4paper]{article}
+
+% ============================================================
+% Pacchetti fondamentali
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Ottimizza la resa dei font in PDF
+\usepackage{amsmath} % Comandi matematici (\text, \rightarrow, ...)
+
+% Formattazione pagina e layout
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+% Tabelle professionali
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+
+% Grafica, colori, elenchi, codice
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+
+% Intestazioni e piè di pagina
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{gray}{\textbf{Travel Organizer Offline}}}
+\fancyhead[R]{\textcolor{gray}{Relazione Tecnica}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\setlength{\headheight}{14pt} % Evita il warning di fancyhdr sull'altezza
+
+% Stile dei titoli
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{blue!70!black}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{blue!30!black}}{\thesubsubsection}{1em}{}
+
+\usepackage[colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!70!black]{hyperref}
+
+% Stile per i frammenti di codice
+\definecolor{codebg}{RGB}{245,247,250}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\begin{document}
+
+% ============================================================
+% Frontespizio
+% ============================================================
+\begin{titlepage}
+    \centering
+    \vspace*{2.5cm}
+    {\Huge \textbf{Relazione Tecnica}}\\[0.4cm]
+    {\Large di Progettazione e Sviluppo}\\[1.5cm]
+    {\Huge \textbf{Travel Organizer Offline}}\\[0.5cm]
+    {\large App mobile per l'organizzazione dei viaggi}\\[2cm]
+
+    {\Large Giugno 2026\par}
+    \vfill
+    \begin{flushright}
+        \textbf{\textit{Gruppo}}\\
+        \textit{Componente 1}\\
+        \textit{Componente 2}\\
+        \textit{Componente 3}\par
+    \end{flushright}
+    \vspace{2cm}
+    \Large Mobile Programming -- Anno Accademico 2025/2026
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Descrizione dell'app}
+
+\subsection{Obiettivo}
+\textbf{Travel Organizer Offline} è un'applicazione mobile, sviluppata in
+\textit{Flutter}, che aiuta l'utente a pianificare e gestire i propri viaggi:
+itinerari, tappe, attività, checklist e spese. Tutte le informazioni restano
+disponibili \textbf{anche senza connessione di rete}, perché i dati sono salvati
+in un database locale sul dispositivo. L'app non utilizza API remote né un
+backend: è pensata per funzionare al 100\% offline.
+
+\subsection{Tipologia di utenti}
+L'applicazione si rivolge a chiunque organizzi viaggi -- viaggiatori abituali,
+studenti, famiglie -- e desideri uno strumento semplice per tenere sotto
+controllo programma, bagaglio e budget anche dove la rete non è disponibile
+(aereo, estero, zone remote).
+
+\subsection{Problema che l'app intende risolvere}
+Le informazioni di un viaggio sono spesso frammentate tra note, chat e siti
+diversi e richiedono una connessione per essere consultate. Travel Organizer
+Offline centralizza tutto in un'unica app consultabile offline, evitando la
+dipendenza dalla rete e la dispersione dei dati.
+
+\subsection{Principali scenari d'uso}
+\begin{itemize}[noitemsep]
+    \item \textbf{Pianificazione:} l'utente crea un viaggio, lo suddivide in
+    tappe e associa a ciascuna le attività con orari e luoghi.
+    \item \textbf{Preparazione:} genera la lista valigia in base ai tag del
+    viaggio e compila le checklist dei documenti.
+    \item \textbf{Controllo spese:} registra spese previste ed effettive e
+    monitora il budget tramite la barra di salute.
+    \item \textbf{In viaggio:} consulta offline la timeline della giornata e i
+    tempi liberi disponibili.
+    \item \textbf{Condivisione:} esporta un viaggio in JSON e lo invia a un
+    amico, che può reimportarlo nella propria app.
+\end{itemize}
+
+% ============================================================
+\section{Requisiti}
+
+\subsection{Quadro generale dei requisiti}
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3cm} l X l}
+        \toprule
+        \textbf{Categoria} & \textbf{Codice} & \textbf{Descrizione} & \textbf{Priorità} \\
+        \midrule
+        Dati & DF-1 & Modellazione e persistenza (Viaggi, Tappe, Attività, Checklist, Spese) & Must \\
+        Funzione & IF-1 & Gestione dei Viaggi & Must \\
+        Funzione & IF-2 & Gestione delle Tappe/Giornate & Must \\
+        Funzione & IF-3 & Gestione delle Attività e dell'itinerario & Must \\
+        Funzione & IF-4 & Gestione delle Checklist e informazioni utili & Must \\
+        Funzione & IF-5 & Gestione delle Spese e del budget & Must \\
+        Funzione & IF-6 & Ricerca, filtri e organizzazione & Should \\
+        Funzione & IF-7 & Riepiloghi e statistiche & Should \\
+        Funzione & IF-8 & Feature avanzate & Should \\
+        Flusso & BF & Flussi inter-modulo & Must \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Modelli dei dati (DF)}
+\begin{itemize}[noitemsep]
+    \item \textbf{DF-1.1 Viaggio:} id, titolo, destinazione, dataInizio,
+    dataFine, descrizione, stato, budget, partecipanti, note, tag, dataCreazione.
+    \item \textbf{DF-1.2 Tappa:} id, viaggioId, titolo, data, località,
+    descrizione, ordine, note.
+    \item \textbf{DF-1.3 Attività:} id, viaggioId, tappaId, titolo, descrizione,
+    dataOra, luogo, categoria, costoPrevisto, stato, note.
+    \item \textbf{DF-1.4 Checklist:} id, viaggioId, tappaId, titolo, descrizione,
+    elementi.
+    \item \textbf{DF-1.5 Elemento checklist:} id, checklistId, titolo,
+    completato, ordine.
+    \item \textbf{DF-1.6 Spesa:} id, viaggioId, tappaId, attivitàId, titolo,
+    importo, categoria, data, metodoPagamento, stato (prevista/effettiva), note.
+\end{itemize}
+
+\subsection{Funzionalità implementate (IF)}
+\begin{itemize}[noitemsep]
+    \item \textbf{IF-1 Viaggi:} elenco, dettaglio, inserimento, modifica,
+    eliminazione, \textbf{duplicazione} e assegnazione di \textbf{tag}. Lo stato
+    (futuro/in corso/completato/archiviato) è calcolato dalle date.
+    \item \textbf{IF-2 Tappe:} elenco, inserimento, modifica, eliminazione,
+    \textbf{riordino con drag \& drop} e accesso alle attività associate.
+    \item \textbf{IF-3 Attività:} inserimento, modifica, eliminazione,
+    associazione a viaggio/tappa, cambio di stato (da fare/completata/annullata),
+    categoria, data/ora, luogo e costo previsto.
+    \item \textbf{IF-4 Checklist:} creazione, aggiunta/modifica/eliminazione e
+    spunta degli elementi, barra di avanzamento e duplicazione.
+    \item \textbf{IF-5 Spese:} inserimento, modifica, eliminazione, distinzione
+    tra spese previste ed effettive, metodo di pagamento e confronto col budget.
+    \item \textbf{IF-6 Ricerca e filtri:} viaggi per titolo/destinazione e per
+    stato; attività per categoria, stato e giorno; spese per stato, categoria e
+    fascia di importo; tappe per nome/località e per data.
+    \item \textbf{IF-7 Statistiche:} totali e stato dei viaggi, attività totali e
+    completate, spese effettive/previste, avanzamento checklist, classifica delle
+    tappe con più attività, grafico a torta delle spese per categoria e barra di
+    salute del budget per ciascun viaggio.
+    \item \textbf{IF-8 Feature avanzate:} descritte nella Sezione~\ref{sec:adv}.
+\end{itemize}
+
+\subsection{Feature avanzate scelte}\label{sec:adv}
+La traccia richiede almeno due feature avanzate; il progetto ne integra diverse,
+tutte effettivamente funzionanti:
+\begin{enumerate}[noitemsep]
+    \item \textbf{Packing list intelligente con tag.} A ogni viaggio si possono
+    assegnare dei tag (Mare, Montagna, Città, Estero, Business, Trekking,
+    Inverno). Una matrice predefinita nel codice associa a ogni tag un insieme di
+    oggetti (es. \textit{Mare} $\rightarrow$ Costume, Crema solare; \textit{Estero}
+    $\rightarrow$ Passaporto, Adattatore prese). La generazione della lista valigia
+    unisce gli oggetti di base con i suggerimenti dei tag, senza duplicati. Tutta
+    la logica è locale.
+    \item \textbf{Timeline visuale con tempi liberi.} L'itinerario è mostrato come
+    linea del tempo con blocchi colorati in base alla categoria; l'app calcola i
+    periodi liberi tra un'attività e l'altra e li evidenzia (es. \textit{``Hai 3h di
+    tempo libero''}).
+    \item \textbf{Budget gamification.} Una barra di salute del budget cambia
+    colore (verde $\rightarrow$ giallo $\rightarrow$ rosso) all'aumentare della
+    spesa, e un avviso compare quando una spesa effettiva supera il budget residuo.
+    \item \textbf{Esporta/Importa viaggio.} Un viaggio completo (con tappe,
+    attività, checklist e spese) può essere esportato in JSON e condiviso tramite
+    il menu nativo del sistema; un altro utente può reimportarlo. Gli identificatori
+    vengono rigenerati per evitare conflitti con i dati esistenti.
+    \item \textbf{Duplicazione} di viaggi, tappe e checklist.
+\end{enumerate}
+
+\subsection{Funzionalità considerate ma non implementate}
+\begin{itemize}[noitemsep]
+    \item Simulatore di cambio valuta con tasso manuale per viaggio.
+    \item Salvataggio di ``giornate tipo'' come modelli riutilizzabili.
+    \item Temi grafici dinamici in base alla destinazione.
+    \item Notifiche locali (promemoria di partenza/scadenze).
+\end{itemize}
+Queste funzioni sono state valutate ma escluse per mantenere l'app semplice,
+coerente e priva di dipendenze non necessarie.
+
+\subsection{Limitazioni note}
+\begin{itemize}[noitemsep]
+    \item La gestione del cambio valuta non è inclusa: gli importi sono in un'unica
+    valuta (Euro).
+    \item L'import di un viaggio avviene incollando il testo JSON (non è prevista la
+    lettura diretta di un file).
+    \item I dati sono locali al dispositivo: non esiste sincronizzazione su cloud.
+\end{itemize}
+
+% ============================================================
+\section{Progettazione dell'app}
+
+\subsection{Struttura generale}
+L'app adotta un'architettura a livelli che separa nettamente
+\textbf{interfaccia}, \textbf{stato} e \textbf{accesso ai dati}:
+\[
+\text{UI (Schermate)} \;\rightarrow\; \text{Provider (Stato)} \;\rightarrow\;
+\text{Repository} \;\rightarrow\; \text{Database SQLite}
+\]
+Questa separazione rende il codice ordinato e testabile: le schermate non
+conoscono il database, ma dialogano con i provider; i provider usano i repository,
+che incapsulano le query SQL.
+
+\subsection{Schermate principali}
+\begin{itemize}[noitemsep]
+    \item \textbf{Lista Viaggi:} elenco con ricerca, filtro per stato, tag e azioni
+    rapide (apri, duplica, modifica, elimina); pulsante di importazione.
+    \item \textbf{Dettaglio Viaggio:} sei schede -- Tappe, Attività, Checklist,
+    Spese, Timeline, Valigia -- con esportazione/condivisione.
+    \item \textbf{Form} di inserimento/modifica per viaggi, tappe, attività e spese,
+    con validazione dei campi.
+    \item \textbf{Dettaglio Tappa:} informazioni della tappa ed elenco attività.
+    \item \textbf{Statistiche:} riepiloghi e grafici su tutti i viaggi.
+\end{itemize}
+
+\subsection{Flusso di navigazione}
+La navigazione principale avviene tramite una \textit{Bottom Navigation Bar} a due
+sezioni (Viaggi e Statistiche). Dalla lista si apre il dettaglio di un viaggio
+(passaggio dell'\texttt{id} alla schermata successiva), organizzato in schede; da
+ciascuna scheda si raggiungono i form di inserimento/modifica. Le transizioni usano
+\texttt{Navigator} e \texttt{MaterialPageRoute}, con passaggio esplicito dei dati
+tra schermate.
+
+\subsection{Organizzazione dei dati}
+Lo schema relazionale prevede una tabella per ciascuna entità, con vincoli di
+chiave esterna e \textbf{eliminazione a cascata}: cancellando un viaggio vengono
+rimossi automaticamente tappe, attività, checklist (con i relativi elementi) e
+spese collegate.
+
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{l l X}
+        \toprule
+        \textbf{Tabella} & \textbf{Relazione} & \textbf{Note} \\
+        \midrule
+        trips & -- & Entità principale \\
+        stages & trips (1:N) & ON DELETE CASCADE \\
+        activities & trips/stages & CASCADE su trip, SET NULL su stage \\
+        checklists & trips/stages & CASCADE su trip \\
+        checklist\_items & checklists (1:N) & ON DELETE CASCADE \\
+        expenses & trips (1:N) & ON DELETE CASCADE \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Integrità dei dati}
+Oltre ai vincoli del database, l'app applica regole a livello applicativo:
+\begin{itemize}[noitemsep]
+    \item impedisce di salvare due viaggi con \textbf{date sovrapposte};
+    \item valida che la data di fine non preceda quella di inizio;
+    \item richiede i campi obbligatori (titolo, destinazione, importo);
+    \item dopo l'eliminazione di un viaggio, allinea le cache in memoria così le
+    statistiche restano coerenti.
+\end{itemize}
+
+% ============================================================
+\section{Scelte tecnologiche}
+
+\subsection{Framework}
+È stato scelto \textbf{Flutter} (Material 3) per la possibilità di sviluppare con
+un unico codice sorgente un'app fluida e multipiattaforma (Android, iOS, Web),
+coerentemente con i vincoli della traccia.
+
+\subsection{Librerie principali}
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{l X}
+        \toprule
+        \textbf{Libreria} & \textbf{Motivazione} \\
+        \midrule
+        \texttt{provider} & Gestione dello stato semplice e reattiva (pattern ChangeNotifier). \\
+        \texttt{sqflite} / \texttt{sqflite\_common\_ffi\_web} & Persistenza locale su SQLite, anche su Web tramite WebAssembly. \\
+        \texttt{fl\_chart} & Grafici (torta) per la sezione statistiche. \\
+        \texttt{intl} & Formattazione di date e valuta in italiano. \\
+        \texttt{share\_plus} & Condivisione tramite il menu nativo del sistema. \\
+        \texttt{uuid} & Generazione di identificatori univoci. \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Motivazione delle scelte}
+\texttt{provider} è leggero e adatto a un'app di queste dimensioni, evitando la
+complessità di soluzioni più pesanti. \texttt{sqflite} fornisce un database
+relazionale completo (chiavi esterne, cascata) ideale per dati strutturati e
+collegati. La combinazione con \texttt{sqflite\_common\_ffi\_web} permette di
+eseguire l'app anche nel browser senza modifiche al codice di dominio.
+
+\subsection{Gestione della persistenza}
+Tutti i dati sono salvati in un database \textbf{SQLite locale}. Un
+\texttt{DatabaseHelper} (singleton) gestisce apertura, creazione dello schema,
+attivazione delle chiavi esterne e migrazioni di versione. I \textbf{Repository}
+incapsulano le query SQL (CRUD e ricerche) per ciascuna entità.
+
+% ============================================================
+\section{Implementazione}
+
+\subsection{Organizzazione del codice}
+\begin{lstlisting}
+lib/
+  core/        Tema, colori, utility, catalogo packing
+  data/
+    database/  DatabaseHelper (schema, migrazioni)
+    models/    Trip, Stage, Activity, Checklist, Expense
+    repositories/  Accesso ai dati (query SQL)
+    trip_transfer.dart  Esporta/Importa viaggio (JSON)
+  providers/   Stato dell'app (ChangeNotifier)
+  features/    Schermate (viaggi, tappe, attivita', spese, timeline, statistiche)
+  shared/widgets/  Widget riutilizzabili
+  main.dart    Avvio dell'app
+\end{lstlisting}
+
+\subsection{Widget principali}
+Tra i componenti riutilizzabili: \texttt{EmptyState} (schermata per le liste
+vuote con call-to-action), \texttt{ConfirmDialog} (conferma delle eliminazioni),
+\texttt{StatusChip} (etichetta colorata di stato). Le schermate di dettaglio usano
+\texttt{TabBar}/\texttt{TabBarView} e \texttt{SliverAppBar}.
+
+\subsection{Gestione dello stato}
+Lo stato è gestito con il pattern \textbf{Provider/ChangeNotifier}: ogni entità ha
+un proprio provider (es. \texttt{TripProvider}, \texttt{ExpenseProvider}) che
+mantiene i dati in memoria, esegue le operazioni tramite i repository e notifica la
+UI con \texttt{notifyListeners()}. Le schermate si aggiornano automaticamente
+tramite \texttt{Consumer} e \texttt{context.watch}.
+
+\subsection{Gestione della navigazione}
+La navigazione tra schermate usa \texttt{Navigator} e \texttt{MaterialPageRoute},
+con \textbf{passaggio esplicito dei dati} (ad esempio l'\texttt{id} del viaggio o
+l'oggetto da modificare). La barra inferiore usa un \texttt{IndexedStack} per
+conservare lo stato delle sezioni.
+
+\subsection{Gestione dei dati persistenti}
+Le operazioni di lettura/scrittura passano sempre dai repository. Esempio di
+controllo di integrità sulle date dei viaggi:
+\begin{lstlisting}
+// Due intervalli si sovrappongono se: inizio <= altraFine && altroInizio <= fine
+Trip? overlappingTrip(DateTime start, DateTime end, {String? excludeId}) {
+  for (final t in _trips) {
+    if (t.id == excludeId) continue;
+    if (!start.isAfter(t.endDate) && !t.startDate.isAfter(end)) return t;
+  }
+  return null;
+}
+\end{lstlisting}
+
+\subsection{Parti significative}
+\begin{itemize}[noitemsep]
+    \item \textbf{Packing list intelligente:} un catalogo \texttt{tag $\rightarrow$
+    oggetti} guida la generazione automatica della valigia.
+    \item \textbf{Esporta/Importa:} serializzazione dell'intero grafo di un viaggio
+    in JSON e re-importazione con rimappatura degli identificatori, validata da un
+    test automatico di round-trip.
+    \item \textbf{Timeline:} calcolo dei tempi liberi tra attività consecutive dello
+    stesso giorno.
+    \item \textbf{Test:} il progetto include test automatici (avvio dell'app,
+    integrità delle date, eliminazione, esporta/importa) eseguiti su SQLite via FFI.
+\end{itemize}
+
+% ============================================================
+\section{Casi d'uso}
+
+\subsection{Elenco dei casi d'uso}
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{l X | l X}
+        \toprule
+        \textbf{ID} & \textbf{Caso d'uso} & \textbf{ID} & \textbf{Caso d'uso} \\
+        \midrule
+        UC-1 & Inserisci viaggio & UC-7 & Cerca e filtra elementi \\
+        UC-2 & Inserisci tappa & UC-8 & Visualizza statistiche \\
+        UC-3 & Pianifica attività & UC-9 & Visualizza timeline \\
+        UC-4 & Gestisci checklist & UC-10 & Esporta / Importa viaggio \\
+        UC-5 & Registra spesa & UC-11 & Modifica o elimina elemento \\
+        UC-6 & Genera packing list smart & & \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Descrizione dettagliata}
+
+\subsubsection*{UC-1: Inserisci viaggio}
+\textbf{Attore:} Utente.\\
+\textbf{Precondizioni:} App avviata, persistenza inizializzata.\\
+\textbf{Postcondizioni:} Un nuovo viaggio è salvato e mostrato nell'elenco.\\
+\textbf{Flusso base:}
+\begin{enumerate}[noitemsep]
+    \item L'utente seleziona ``Nuovo viaggio''.
+    \item Compila titolo, destinazione, date, budget, partecipanti, tag e note.
+    \item Il sistema valida i campi obbligatori e le date.
+    \item Il sistema salva il viaggio e torna all'elenco aggiornato.
+\end{enumerate}
+\textbf{Flussi alternativi:}
+\begin{itemize}[noitemsep]
+    \item \textbf{3a. Date sovrapposte:} il sistema rileva un altro viaggio con date
+    che si accavallano, blocca il salvataggio e mostra un avviso.
+    \item \textbf{3b. Campi non validi:} il sistema evidenzia l'errore e resta in
+    attesa di una correzione.
+\end{itemize}
+
+\subsubsection*{UC-2: Inserisci tappa}
+\textbf{Attore:} Utente.\\
+\textbf{Precondizioni:} Esiste un viaggio.\\
+\textbf{Postcondizioni:} La tappa è aggiunta all'itinerario del viaggio.\\
+\textbf{Flusso base:} l'utente apre la scheda Tappe, inserisce titolo, data,
+località, descrizione e note; il sistema valida e salva, aggiornando l'elenco
+(riordinabile tramite drag \& drop).
+
+\subsubsection*{UC-3: Pianifica attività}
+\textbf{Attore:} Utente.\\
+\textbf{Precondizioni:} Esiste un viaggio (ed eventualmente una tappa).\\
+\textbf{Postcondizioni:} L'attività è pianificata e associata al viaggio/tappa.\\
+\textbf{Flusso base:} l'utente inserisce titolo, categoria, data/ora, luogo, costo
+e tappa associata; il sistema valida e salva. \textbf{Alternativo:} titolo mancante
+$\rightarrow$ il salvataggio è bloccato con messaggio d'errore.
+
+\subsubsection*{UC-4: Gestisci checklist}
+\textbf{Attore:} Utente.\\
+\textbf{Postcondizioni:} La checklist e i suoi elementi sono aggiornati.\\
+\textbf{Flusso base:} l'utente crea una checklist, aggiunge elementi, li spunta o
+li elimina; la barra di avanzamento si aggiorna in tempo reale. Può inoltre
+duplicare una checklist esistente.
+
+\subsubsection*{UC-5: Registra spesa}
+\textbf{Attore:} Utente.\\
+\textbf{Postcondizioni:} La spesa è registrata e i totali aggiornati.\\
+\textbf{Flusso base:} l'utente inserisce titolo, importo, categoria, data, tipo
+(prevista/effettiva) e metodo di pagamento; il sistema valida e salva.\\
+\textbf{Alternativo 3a. Fuori budget:} se la spesa effettiva supera il budget
+residuo, il sistema mostra un avviso e chiede conferma prima di salvare.
+
+\subsubsection*{UC-6: Genera packing list smart}
+\textbf{Attore:} Utente.\\
+\textbf{Precondizioni:} Esiste un viaggio (preferibilmente con tag).\\
+\textbf{Postcondizioni:} La lista valigia è popolata con oggetti pertinenti.\\
+\textbf{Flusso base:}
+\begin{enumerate}[noitemsep]
+    \item L'utente apre la scheda Valigia e seleziona ``Genera lista''.
+    \item Il sistema legge i tag del viaggio e recupera dal catalogo gli oggetti
+    suggeriti.
+    \item Il sistema unisce oggetti di base e suggerimenti dai tag, senza duplicati,
+    e li aggiunge alla checklist.
+\end{enumerate}
+
+\subsubsection*{UC-7: Cerca e filtra elementi}
+\textbf{Attore:} Utente.\\
+\textbf{Flusso base:} l'utente applica ricerca o filtri (viaggi per
+titolo/stato; attività per categoria/stato/giorno; spese per categoria/importo;
+tappe per nome/data) e la lista mostra solo i risultati pertinenti.\\
+\textbf{Alternativo:} nessun risultato $\rightarrow$ viene mostrato uno stato vuoto
+esplicativo.
+
+\subsubsection*{UC-8: Visualizza statistiche}
+\textbf{Attore:} Utente.\\
+\textbf{Flusso base:} l'utente apre la sezione Statistiche; il sistema calcola
+totali, attività completate, spese e avanzamento checklist, e genera i grafici e
+le barre di salute del budget.\\
+\textbf{Alternativo:} archivio vuoto $\rightarrow$ messaggio ``Nessun dato
+disponibile''.
+
+\subsubsection*{UC-9: Visualizza timeline}
+\textbf{Attore:} Utente.\\
+\textbf{Flusso base:} l'utente apre la scheda Timeline; il sistema mostra le
+attività come blocchi colorati per categoria, ordinate per orario, ed evidenzia i
+tempi liberi tra un'attività e l'altra.
+
+\subsubsection*{UC-10: Esporta / Importa viaggio}
+\textbf{Attore:} Utente.\\
+\textbf{Postcondizioni:} Un viaggio è condiviso o ricreato nell'archivio.\\
+\textbf{Flusso base (Esporta):} dal dettaglio del viaggio l'utente sceglie
+``Esporta''; il sistema genera il JSON e apre il menu di condivisione nativo.\\
+\textbf{Flusso base (Importa):} dall'elenco l'utente incolla il JSON; il sistema lo
+valida, rigenera gli identificatori, ricollega le relazioni e crea il nuovo viaggio.\\
+\textbf{Alternativo:} JSON non valido $\rightarrow$ messaggio d'errore.
+
+\subsubsection*{UC-11: Modifica o elimina elemento}
+\textbf{Attore:} Utente.\\
+\textbf{Flusso base:} l'utente seleziona ``Modifica'' o ``Elimina''; in caso di
+eliminazione il sistema chiede conferma con un \texttt{AlertDialog}, poi aggiorna il
+database e la UI.\\
+\textbf{Alternativi:} annullamento della rimozione (nessuna modifica) oppure dati
+modificati non validi (salvataggio bloccato con segnalazione).
+
+% ============================================================
+\section{Conclusioni}
+Travel Organizer Offline soddisfa tutte le funzionalità richieste dalla traccia --
+viaggi, tappe, attività, checklist e spese -- aggiungendo ricerca, filtri,
+statistiche e diverse feature avanzate effettivamente integrate. L'architettura a
+livelli, la persistenza locale coerente e i controlli di integrità rendono l'app
+robusta, semplice da usare e completamente funzionante offline.
+
+\end{document}
