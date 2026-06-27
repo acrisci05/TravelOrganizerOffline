@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/packing_catalog.dart';
 import '../../data/models/checklist.dart';
+import '../../data/models/checklist_item.dart';
 import '../../providers/checklist_provider.dart';
 import '../../providers/trip_provider.dart';
 
@@ -21,38 +22,24 @@ class _PackingListScreenState extends State<PackingListScreen> {
   // identificatore per ritrovarla tra le checklist del viaggio.
   static const _packingTitle = 'Lista Valigia';
 
-  // Oggetti di base proposti per generare velocemente una lista valigia.
-  static const _defaultItems = [
-    'T-shirt',
-    'Pantaloni',
-    'Scarpe',
-    'Giacca / Maglione',
-    'Biancheria intima',
-    'Calzini',
-    'Pigiama',
-    'Passaporto / Carta d\'identità',
-    'Biglietti di viaggio',
-    'Assicurazione viaggio',
-    'Conferme prenotazioni',
-    'Caricabatterie telefono',
-    'Power bank',
-    'Cuffie',
-    'Adattatore presa',
-    'Spazzolino e dentifricio',
-    'Shampoo e balsamo',
-    'Sapone / Gel doccia',
-    'Rasoio / Depilatore',
-    'Deodorante',
-    'Farmaci personali',
-    'Kit pronto soccorso',
-    'Crema solare',
-    'Occhiali da sole',
-    'Ombrello',
-    'Fotocamera',
+  // Etichetta usata per gli oggetti senza sacchetto assegnato.
+  static const _altriBag = 'Altri';
+
+  // Ordine di visualizzazione dei sacchetti nella lista.
+  static const _bagOrder = [
+    PackingCatalog.bagAbbigliamento,
+    PackingCatalog.bagDocumenti,
+    PackingCatalog.bagElettronica,
+    PackingCatalog.bagIgiene,
+    PackingCatalog.bagMedicinali,
+    PackingCatalog.bagVarie,
+    _altriBag,
   ];
 
   String? _checklistId;
   final _addCtrl = TextEditingController();
+  // Sacchetto selezionato per l'aggiunta manuale di un oggetto.
+  String _addBag = PackingCatalog.bagVarie;
 
   @override
   void initState() {
@@ -96,6 +83,7 @@ class _PackingListScreenState extends State<PackingListScreen> {
 
   // Genera la lista valigia combinando gli oggetti di base con i suggerimenti
   // intelligenti ricavati dai tag del viaggio (es. Mare -> Costume, Crema solare).
+  // Ogni oggetto viene inserito nel proprio "sacchetto" (categoria).
   Future<void> _generateDefault() async {
     if (!mounted) return;
     final provider = context.read<ChecklistProvider>();
@@ -106,17 +94,19 @@ class _PackingListScreenState extends State<PackingListScreen> {
     final trip = context.read<TripProvider>().getById(widget.tripId);
     final tagSuggestions = PackingCatalog.suggestionsFor(trip?.tags ?? const []);
 
-    // Unisce oggetti di base e suggerimenti dai tag, evitando i duplicati.
-    final toAdd = <String>[
-      ..._defaultItems,
-      ...tagSuggestions.where((s) => !_defaultItems.contains(s)),
+    // Unisce oggetti di base e suggerimenti dai tag, evitando i duplicati di nome.
+    final toAdd = <PackingItem>[
+      ...PackingCatalog.baseItems,
+      ...tagSuggestions.where(
+          (s) => !PackingCatalog.baseItems.any((b) => b.name == s.name)),
     ];
 
     final existing = cl.items.map((i) => i.title).toSet();
     int added = 0;
     for (final item in toAdd) {
-      if (!existing.contains(item)) {
-        await provider.addItem(widget.tripId, cl.id, item);
+      if (!existing.contains(item.name)) {
+        await provider.addItem(widget.tripId, cl.id, item.name,
+            category: item.bag);
         added++;
       }
     }
@@ -127,7 +117,7 @@ class _PackingListScreenState extends State<PackingListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(added > 0
-              ? '$added elementi aggiunti alla lista$tagInfo'
+              ? '$added elementi aggiunti, organizzati in sacchetti$tagInfo'
               : 'Lista già completa'),
         ),
       );
@@ -139,8 +129,66 @@ class _PackingListScreenState extends State<PackingListScreen> {
     final provider = context.read<ChecklistProvider>();
     final cl = _getChecklist(provider);
     if (cl == null) return;
-    await provider.addItem(widget.tripId, cl.id, text.trim());
+    await provider.addItem(widget.tripId, cl.id, text.trim(),
+        category: _addBag);
     _addCtrl.clear();
+  }
+
+  // Raggruppa gli oggetti per sacchetto e costruisce una sezione per ciascuno,
+  // con intestazione e barra di avanzamento dedicata.
+  List<Widget> _buildBagSections(
+      Checklist cl, ChecklistProvider provider) {
+    // Raggruppa gli elementi per sacchetto (categoria), null -> "Altri".
+    final groups = <String, List<ChecklistItem>>{};
+    for (final item in cl.items) {
+      final bag = (item.category == null || item.category!.isEmpty)
+          ? _altriBag
+          : item.category!;
+      (groups[bag] ??= []).add(item);
+    }
+
+    // Ordina i sacchetti secondo _bagOrder; eventuali extra in coda.
+    final bags = groups.keys.toList()
+      ..sort((a, b) {
+        final ia = _bagOrder.indexOf(a);
+        final ib = _bagOrder.indexOf(b);
+        return (ia == -1 ? 999 : ia).compareTo(ib == -1 ? 999 : ib);
+      });
+
+    final widgets = <Widget>[];
+    for (final bag in bags) {
+      final items = groups[bag]!;
+      final done = items.where((i) => i.isCompleted).length;
+      widgets.add(_BagHeader(
+          name: bag, completed: done, total: items.length));
+      for (final item in items) {
+        widgets.add(CheckboxListTile(
+          dense: true,
+          value: item.isCompleted,
+          onChanged: (_) =>
+              provider.toggleItem(widget.tripId, cl.id, item.id),
+          title: Text(
+            item.title,
+            style: TextStyle(
+              decoration: item.isCompleted
+                  ? TextDecoration.lineThrough
+                  : null,
+              color: item.isCompleted
+                  ? AppColors.textSecondary
+                  : AppColors.textPrimary,
+            ),
+          ),
+          activeColor: AppColors.success,
+          secondary: IconButton(
+            icon: const Icon(Icons.delete_outline,
+                size: 18, color: AppColors.error),
+            onPressed: () =>
+                provider.deleteItem(widget.tripId, cl.id, item.id),
+          ),
+        ));
+      }
+    }
+    return widgets;
   }
 
   @override
@@ -166,35 +214,9 @@ class _PackingListScreenState extends State<PackingListScreen> {
               Expanded(
                 child: cl.items.isEmpty
                     ? _EmptyPackingState(onGenerate: _generateDefault)
-                    : ListView.builder(
+                    : ListView(
                         padding: const EdgeInsets.only(bottom: 100),
-                        itemCount: cl.items.length,
-                        itemBuilder: (ctx, i) {
-                          final item = cl.items[i];
-                          return CheckboxListTile(
-                            value: item.isCompleted,
-                            onChanged: (_) => provider.toggleItem(
-                                widget.tripId, cl.id, item.id),
-                            title: Text(
-                              item.title,
-                              style: TextStyle(
-                                decoration: item.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                color: item.isCompleted
-                                    ? AppColors.textSecondary
-                                    : AppColors.textPrimary,
-                              ),
-                            ),
-                            activeColor: AppColors.success,
-                            secondary: IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: AppColors.error),
-                              onPressed: () => provider.deleteItem(
-                                  widget.tripId, cl.id, item.id),
-                            ),
-                          );
-                        },
+                        children: _buildBagSections(cl, provider),
                       ),
               ),
               Container(
@@ -202,6 +224,23 @@ class _PackingListScreenState extends State<PackingListScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: Row(
                   children: [
+                    // Selettore del sacchetto in cui inserire il nuovo oggetto.
+                    DropdownButton<String>(
+                      value: _addBag,
+                      underline: const SizedBox.shrink(),
+                      isDense: true,
+                      items: _bagOrder
+                          .where((b) => b != _altriBag)
+                          .map((b) => DropdownMenuItem(
+                                value: b,
+                                child: Text(b,
+                                    style: const TextStyle(fontSize: 13)),
+                              ))
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _addBag = v ?? _addBag),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                         controller: _addCtrl,
@@ -215,7 +254,7 @@ class _PackingListScreenState extends State<PackingListScreen> {
                         onSubmitted: _addItem,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     IconButton(
                       icon: const Icon(Icons.add_circle,
                           color: AppColors.primary, size: 32),
@@ -291,6 +330,52 @@ class _ProgressHeader extends StatelessWidget {
               backgroundColor: Colors.white.withAlpha(30),
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Intestazione di un sacchetto: nome, conteggio e barra di avanzamento dedicata.
+class _BagHeader extends StatelessWidget {
+  final String name;
+  final int completed;
+  final int total;
+  const _BagHeader(
+      {required this.name, required this.completed, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final full = total > 0 && completed == total;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Row(
+        children: [
+          Icon(full ? Icons.check_circle : Icons.inventory_2_outlined,
+              size: 18,
+              color: full ? AppColors.success : AppColors.primary),
+          const SizedBox(width: 8),
+          Text(
+            name,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(width: 8),
+          Text('$completed/$total',
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: total == 0 ? 0 : completed / total,
+                minHeight: 5,
+                backgroundColor: AppColors.textHint.withAlpha(50),
+                color: full ? AppColors.success : AppColors.primary,
+              ),
             ),
           ),
         ],

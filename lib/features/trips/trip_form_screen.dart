@@ -28,6 +28,8 @@ class _TripFormScreenState extends State<TripFormScreen> {
   TripStatus _status = TripStatus.future;
   // Tag selezionati per il viaggio (usati dalla packing list smart).
   late List<String> _tags;
+  // Modalità principale di viaggio selezionata (auto, aereo, ...).
+  TransportMode? _transportMode;
   bool _isSaving = false;
 
   bool get _isEditing => widget.existingTrip != null;
@@ -49,6 +51,7 @@ class _TripFormScreenState extends State<TripFormScreen> {
         t?.endDate ?? DateTime.now().add(const Duration(days: 7));
     _status = t?.status ?? TripStatus.future;
     _tags = List<String>.from(t?.tags ?? const []);
+    _transportMode = t?.transportMode;
   }
 
   @override
@@ -103,6 +106,34 @@ class _TripFormScreenState extends State<TripFormScreen> {
             const SizedBox(height: 12),
             _field(_participantsCtrl, 'Partecipanti',
                 prefixIcon: Icons.group_outlined),
+            const SizedBox(height: 16),
+            // Selezione della modalità di viaggio (auto, aereo, treno, ...).
+            Row(
+              children: [
+                const Icon(Icons.commute_outlined,
+                    size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text('Modalità di viaggio',
+                    style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: TransportMode.values.map((m) {
+                final selected = _transportMode == m;
+                return ChoiceChip(
+                  avatar: Icon(m.icon,
+                      size: 18,
+                      color: selected ? Colors.white : null),
+                  label: Text(m.label),
+                  selected: selected,
+                  onSelected: (v) => setState(
+                      () => _transportMode = v ? m : null),
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 16),
             // Selezione dei tag: caratterizzano il viaggio e alimentano i
             // suggerimenti intelligenti della lista valigia.
@@ -254,6 +285,7 @@ class _TripFormScreenState extends State<TripFormScreen> {
           notes:
               _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
           tags: _tags,
+          transportMode: _transportMode,
         );
         await provider.updateTrip(updated);
       } else {
@@ -273,6 +305,7 @@ class _TripFormScreenState extends State<TripFormScreen> {
               ? null
               : _notesCtrl.text.trim(),
           tags: _tags,
+          transportMode: _transportMode,
         );
       }
       if (mounted) Navigator.of(context).pop();

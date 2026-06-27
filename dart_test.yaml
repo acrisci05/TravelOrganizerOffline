@@ -1,0 +1,3 @@
+# I test condividono lo stesso file di database SQLite locale: vengono eseguiti
+# in serie (un file alla volta) per evitare interferenze tra di loro.
+concurrency: 1

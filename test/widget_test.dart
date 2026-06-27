@@ -1,6 +1,7 @@
 // Test di "smoke": verifica che l'app si avvii correttamente e mostri la lista
 // dei viaggi vuota (l'app parte sempre senza dati di esempio).
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -13,10 +14,12 @@ import 'package:travel_organizer/providers/checklist_provider.dart';
 import 'package:travel_organizer/providers/expense_provider.dart';
 
 void main() {
-  // Inizializza SQLite tramite FFI: necessario per eseguire i test su desktop/CI.
-  setUpAll(() {
+  // Inizializza SQLite tramite FFI e i dati di localizzazione (necessari al
+  // calendario) per eseguire i test su desktop/CI.
+  setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    await initializeDateFormatting('it_IT', null);
   });
 
   // Ogni test parte da un database pulito.

@@ -5,6 +5,7 @@ import '../../core/utils/date_formatter.dart';
 import '../../data/models/trip.dart';
 import '../../data/trip_transfer.dart';
 import '../../providers/trip_provider.dart';
+import '../search/global_search_screen.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/confirm_dialog.dart';
@@ -48,6 +49,14 @@ class _TripsListScreenState extends State<TripsListScreen> {
       appBar: AppBar(
         title: const Text('I Miei Viaggi'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.travel_explore),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const GlobalSearchScreen()),
+            ),
+            tooltip: 'Ricerca globale',
+          ),
           IconButton(
             icon: const Icon(Icons.download_outlined),
             onPressed: _showImportDialog,
@@ -322,6 +331,21 @@ class _TripCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (trip.transportMode != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(trip.transportMode!.icon,
+                        size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      trip.transportMode!.label,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ],
               if (trip.budget != null) ...[
                 const SizedBox(height: 6),
                 Row(

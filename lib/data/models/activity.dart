@@ -102,6 +102,10 @@ class Activity {
   final double? estimatedCost;
   final ActivityStatus status;
   final String? notes;
+  // Diario di viaggio: pensiero scritto dall'utente sull'attività svolta.
+  final String? journalNote;
+  // Percorso locale della foto associata all'attività (galleria/fotocamera).
+  final String? photoPath;
 
   Activity({
     required this.id,
@@ -115,6 +119,8 @@ class Activity {
     this.estimatedCost,
     this.status = ActivityStatus.todo,
     this.notes,
+    this.journalNote,
+    this.photoPath,
   });
 
   Map<String, dynamic> toMap() {
@@ -130,6 +136,8 @@ class Activity {
       'estimatedCost': estimatedCost,
       'status': status.index,
       'notes': notes,
+      'journalNote': journalNote,
+      'photoPath': photoPath,
     };
   }
 
@@ -148,6 +156,8 @@ class Activity {
       estimatedCost: map['estimatedCost'] as double?,
       status: ActivityStatus.values[map['status'] as int],
       notes: map['notes'] as String?,
+      journalNote: map['journalNote'] as String?,
+      photoPath: map['photoPath'] as String?,
     );
   }
 
@@ -163,6 +173,8 @@ class Activity {
     double? estimatedCost,
     ActivityStatus? status,
     String? notes,
+    String? journalNote,
+    String? photoPath,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -176,6 +188,8 @@ class Activity {
       estimatedCost: estimatedCost ?? this.estimatedCost,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      journalNote: journalNote ?? this.journalNote,
+      photoPath: photoPath ?? this.photoPath,
     );
   }
 }

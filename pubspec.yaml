@@ -19,6 +19,13 @@ dependencies:
   fl_chart: ^0.70.0
   # Condivisione tramite il menu nativo del sistema (esporta viaggio).
   share_plus: ^10.0.0
+  # Calendario mensile con marker per viaggi e attività.
+  table_calendar: ^3.1.2
+  # Selezione/scatto di foto per il diario di viaggio.
+  image_picker: ^1.1.2
+  # Notifiche locali (promemoria attività) e gestione fusi orari.
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:

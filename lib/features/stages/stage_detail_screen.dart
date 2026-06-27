@@ -8,6 +8,7 @@ import '../../data/models/activity.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/confirm_dialog.dart';
 import '../../shared/widgets/status_chip.dart';
+import '../../shared/widgets/local_image.dart';
 import '../activities/activity_form_screen.dart';
 import 'stage_form_screen.dart';
 
@@ -194,17 +195,41 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mostra la miniatura della foto del diario se presente, altrimenti l'icona.
+    final hasPhoto =
+        activity.photoPath != null && activity.photoPath!.isNotEmpty;
+    final hasJournal =
+        activity.journalNote != null && activity.journalNote!.isNotEmpty;
     return Card(
       child: ListTile(
-        leading: Icon(activity.category.icon,
-            size: 26, color: AppColors.primary),
-        title: Text(
-          activity.title,
-          style: TextStyle(
-            decoration: activity.status == ActivityStatus.done
-                ? TextDecoration.lineThrough
-                : null,
-          ),
+        leading: hasPhoto
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LocalImage(
+                    path: activity.photoPath!, width: 44, height: 44),
+              )
+            : Icon(activity.category.icon,
+                size: 26, color: AppColors.primary),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                activity.title,
+                style: TextStyle(
+                  decoration: activity.status == ActivityStatus.done
+                      ? TextDecoration.lineThrough
+                      : null,
+                ),
+              ),
+            ),
+            // Indicatore "diario" se è presente un ricordo scritto.
+            if (hasJournal)
+              const Padding(
+                padding: EdgeInsets.only(left: 6),
+                child: Icon(Icons.menu_book,
+                    size: 14, color: AppColors.primary),
+              ),
+          ],
         ),
         subtitle: activity.dateTime != null
             ? Text(DateFormatter.time(activity.dateTime!))

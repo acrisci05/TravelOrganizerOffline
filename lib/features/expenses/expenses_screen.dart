@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/trip.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/trip_provider.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -64,6 +65,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 totalPlanned: totalPlanned,
                 budget: budget,
               ),
+              // Calcolatore di sbilanciamento del budget (ritmo di spesa).
+              if (trip != null && trip.budget != null)
+                _BudgetPaceCard(trip: trip, spent: totalActual),
               _FilterBar(
                 selectedStatus: _filterStatus,
                 selectedCategory: _filterCategory,
@@ -309,6 +313,95 @@ class _Stat extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   fontSize: 15)),
         ],
+      ),
+    );
+  }
+}
+
+// Calcolatore di sbilanciamento del budget: confronta quanto è stato speso con
+// quanto ci si aspetterebbe in base ai giorni di viaggio trascorsi, e ricalcola
+// il budget giornaliero per i giorni rimanenti.
+class _BudgetPaceCard extends StatelessWidget {
+  final Trip trip;
+  final double spent;
+  const _BudgetPaceCard({required this.trip, required this.spent});
+
+  @override
+  Widget build(BuildContext context) {
+    final budget = trip.budget!;
+    if (budget <= 0) return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start =
+        DateTime(trip.startDate.year, trip.startDate.month, trip.startDate.day);
+    final end =
+        DateTime(trip.endDate.year, trip.endDate.month, trip.endDate.day);
+    final totalDays = trip.durationDays;
+
+    // Giorni trascorsi (inclusivi); 0 prima della partenza, tutti se concluso.
+    int elapsed;
+    if (today.isBefore(start)) {
+      elapsed = 0;
+    } else if (today.isAfter(end)) {
+      elapsed = totalDays;
+    } else {
+      elapsed = today.difference(start).inDays + 1;
+    }
+    // Prima della partenza non c'è ancora un ritmo di spesa da analizzare.
+    if (elapsed <= 0) return const SizedBox.shrink();
+
+    final expected = budget * elapsed / totalDays; // spesa attesa finora
+    final remainingDays = totalDays - elapsed;
+    final remainingBudget = budget - spent;
+    final overspending = spent > expected && expected > 0;
+    final pct =
+        expected > 0 ? ((spent - expected) / expected * 100) : 0.0;
+    final color = overspending ? AppColors.error : AppColors.success;
+
+    return Container(
+      color: AppColors.background,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Icon(
+                  overspending
+                      ? Icons.trending_up
+                      : Icons.trending_flat,
+                  color: color),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Ritmo di spesa (giorno $elapsed di $totalDays)',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 2),
+                    Text(
+                      overspending
+                          ? 'Stai spendendo il ${pct.toStringAsFixed(0)}% più del previsto per i giorni trascorsi.'
+                          : 'Sei in linea con il budget pianificato.',
+                      style: TextStyle(fontSize: 12, color: color),
+                    ),
+                    if (remainingDays > 0)
+                      Text(
+                        remainingBudget >= 0
+                            ? 'Budget ricalcolato: ${DateFormatter.currency(remainingBudget / remainingDays)}/giorno per i prossimi $remainingDays giorni'
+                            : 'Budget esaurito: sei sopra di ${DateFormatter.currency(-remainingBudget)}',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

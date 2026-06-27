@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../data/models/activity.dart';
 import '../data/repositories/activity_repository.dart';
+import '../core/notification_service.dart';
 
 // Gestisce le attività dell'itinerario, raggruppate per viaggio. Espone conteggi
 // utili alle statistiche (totali e completate) e il cambio di stato rapido.
@@ -40,7 +41,7 @@ class ActivityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addActivity({
+  Future<Activity> addActivity({
     required String tripId,
     String? stageId,
     required String title,
@@ -68,6 +69,9 @@ class ActivityProvider extends ChangeNotifier {
     list.add(activity);
     _activitiesByTrip[tripId] = list;
     notifyListeners();
+    // Programma il promemoria (30 min prima) se l'attività ha un orario.
+    await NotificationService.instance.scheduleActivityReminder(activity);
+    return activity;
   }
 
   Future<void> updateActivity(Activity activity) async {
@@ -78,6 +82,8 @@ class ActivityProvider extends ChangeNotifier {
       list[idx] = activity;
       _activitiesByTrip[activity.tripId] = list;
       notifyListeners();
+      // Riprogramma il promemoria in base al nuovo orario/stato.
+      await NotificationService.instance.scheduleActivityReminder(activity);
     }
   }
 
@@ -92,6 +98,8 @@ class ActivityProvider extends ChangeNotifier {
     await _repo.delete(activityId);
     _activitiesByTrip[tripId]?.removeWhere((a) => a.id == activityId);
     notifyListeners();
+    // Annulla l'eventuale promemoria associato.
+    await NotificationService.instance.cancelActivityReminder(activityId);
   }
 
   int completedCount(String tripId) =>

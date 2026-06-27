@@ -1,5 +1,56 @@
+import 'package:flutter/material.dart';
+
 // Stato di un viaggio: futuro, in corso, completato o archiviato.
 enum TripStatus { future, ongoing, completed, archived }
+
+// Modalità principale con cui si svolge il viaggio.
+enum TransportMode { car, plane, train, ship, cruise, bicycle, bus, foot }
+
+extension TransportModeExtension on TransportMode {
+  // Etichetta leggibile della modalità di viaggio.
+  String get label {
+    switch (this) {
+      case TransportMode.car:
+        return 'Auto';
+      case TransportMode.plane:
+        return 'Aereo';
+      case TransportMode.train:
+        return 'Treno';
+      case TransportMode.ship:
+        return 'Nave';
+      case TransportMode.cruise:
+        return 'Crociera';
+      case TransportMode.bicycle:
+        return 'Bicicletta';
+      case TransportMode.bus:
+        return 'Autobus';
+      case TransportMode.foot:
+        return 'A piedi';
+    }
+  }
+
+  // Icona Material associata alla modalità di viaggio.
+  IconData get icon {
+    switch (this) {
+      case TransportMode.car:
+        return Icons.directions_car_outlined;
+      case TransportMode.plane:
+        return Icons.flight_outlined;
+      case TransportMode.train:
+        return Icons.train_outlined;
+      case TransportMode.ship:
+        return Icons.directions_boat_outlined;
+      case TransportMode.cruise:
+        return Icons.sailing_outlined;
+      case TransportMode.bicycle:
+        return Icons.directions_bike_outlined;
+      case TransportMode.bus:
+        return Icons.directions_bus_outlined;
+      case TransportMode.foot:
+        return Icons.directions_walk_outlined;
+    }
+  }
+}
 
 extension TripStatusExtension on TripStatus {
   // Etichetta leggibile dello stato, mostrata nella UI.
@@ -33,6 +84,8 @@ class Trip {
   // Tag che caratterizzano il viaggio (es. Mare, Estero): guidano i suggerimenti
   // intelligenti della lista valigia.
   final List<String> tags;
+  // Modalità principale di viaggio (auto, aereo, treno, ...). Può essere nulla.
+  final TransportMode? transportMode;
   final DateTime createdAt;
 
   Trip({
@@ -47,6 +100,7 @@ class Trip {
     this.participants,
     this.notes,
     this.tags = const [],
+    this.transportMode,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -81,6 +135,7 @@ class Trip {
       'notes': notes,
       // I tag sono salvati come stringa separata da virgole.
       'tags': tags.join(','),
+      'transportMode': transportMode?.index,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -104,6 +159,9 @@ class Trip {
               .where((t) => t.trim().isNotEmpty)
               .toList() ??
           const [],
+      transportMode: map['transportMode'] != null
+          ? TransportMode.values[map['transportMode'] as int]
+          : null,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );
   }
@@ -121,6 +179,7 @@ class Trip {
     String? participants,
     String? notes,
     List<String>? tags,
+    TransportMode? transportMode,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -134,6 +193,7 @@ class Trip {
       participants: participants ?? this.participants,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
+      transportMode: transportMode ?? this.transportMode,
       createdAt: createdAt,
     );
   }

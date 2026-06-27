@@ -60,7 +60,8 @@ class ChecklistProvider extends ChangeNotifier {
   }
 
   Future<void> addItem(
-      String tripId, String checklistId, String title) async {
+      String tripId, String checklistId, String title,
+      {String? category}) async {
     final list = _checklistsByTrip[tripId] ?? [];
     final idx = list.indexWhere((c) => c.id == checklistId);
     if (idx == -1) return;
@@ -70,6 +71,7 @@ class ChecklistProvider extends ChangeNotifier {
       checklistId: checklistId,
       title: title,
       order: checklist.items.length,
+      category: category,
     );
     await _repo.insertItem(item);
     final updatedItems = [...checklist.items, item];

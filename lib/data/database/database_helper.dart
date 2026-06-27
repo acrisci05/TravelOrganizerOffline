@@ -21,7 +21,7 @@ class DatabaseHelper {
     if (kIsWeb) {
       return openDatabase(
         'travel_organizer.db',
-        version: 2,
+        version: 4,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
         onConfigure: (db) async =>
@@ -32,7 +32,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'travel_organizer.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
@@ -44,6 +44,18 @@ class DatabaseHelper {
     // v2: aggiunge la colonna dei tag del viaggio (per la packing list smart).
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE trips ADD COLUMN tags TEXT');
+    }
+    // v3: modalità di viaggio, sacchetti della valigia e diario con foto.
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE trips ADD COLUMN transportMode INTEGER');
+      await db.execute('ALTER TABLE checklist_items ADD COLUMN category TEXT');
+      await db.execute('ALTER TABLE activities ADD COLUMN journalNote TEXT');
+      await db.execute('ALTER TABLE activities ADD COLUMN photoPath TEXT');
+    }
+    // v4: tabella chiave-valore per le impostazioni (es. dati di emergenza ICE).
+    if (oldVersion < 4) {
+      await db.execute(
+          'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     }
   }
 
@@ -64,6 +76,7 @@ class DatabaseHelper {
         participants TEXT,
         notes TEXT,
         tags TEXT,
+        transportMode INTEGER,
         createdAt TEXT NOT NULL
       )
     ''');
@@ -95,6 +108,8 @@ class DatabaseHelper {
         estimatedCost REAL,
         status INTEGER NOT NULL DEFAULT 0,
         notes TEXT,
+        journalNote TEXT,
+        photoPath TEXT,
         FOREIGN KEY (tripId) REFERENCES trips(id) ON DELETE CASCADE,
         FOREIGN KEY (stageId) REFERENCES stages(id) ON DELETE SET NULL
       )
@@ -119,6 +134,7 @@ class DatabaseHelper {
         title TEXT NOT NULL,
         isCompleted INTEGER NOT NULL DEFAULT 0,
         "order" INTEGER NOT NULL DEFAULT 0,
+        category TEXT,
         FOREIGN KEY (checklistId) REFERENCES checklists(id) ON DELETE CASCADE
       )
     ''');
@@ -146,6 +162,10 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_checklists_tripId ON checklists(tripId)');
     await db.execute('CREATE INDEX idx_checklist_items_checklistId ON checklist_items(checklistId)');
     await db.execute('CREATE INDEX idx_expenses_tripId ON expenses(tripId)');
+
+    // Tabella chiave-valore per le impostazioni locali (dati di emergenza ICE).
+    await db.execute(
+        'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
   }
 
   Future<void> close() async {

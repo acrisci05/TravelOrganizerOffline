@@ -1,10 +1,13 @@
 // Singolo elemento di una checklist, con stato di completamento e ordine.
+// Il campo [category] rappresenta il "sacchetto" (es. Elettronica, Documenti)
+// usato per raggruppare gli oggetti nella lista valigia.
 class ChecklistItem {
   final String id;
   final String checklistId;
   final String title;
   final bool isCompleted;
   final int order;
+  final String? category;
 
   ChecklistItem({
     required this.id,
@@ -12,6 +15,7 @@ class ChecklistItem {
     required this.title,
     this.isCompleted = false,
     required this.order,
+    this.category,
   });
 
   Map<String, dynamic> toMap() {
@@ -21,6 +25,7 @@ class ChecklistItem {
       'title': title,
       'isCompleted': isCompleted ? 1 : 0,
       'order': order,
+      'category': category,
     };
   }
 
@@ -31,6 +36,7 @@ class ChecklistItem {
       title: map['title'] as String,
       isCompleted: (map['isCompleted'] as int) == 1,
       order: map['order'] as int,
+      category: map['category'] as String?,
     );
   }
 
@@ -40,6 +46,7 @@ class ChecklistItem {
     String? title,
     bool? isCompleted,
     int? order,
+    String? category,
   }) {
     return ChecklistItem(
       id: id ?? this.id,
@@ -47,6 +54,7 @@ class ChecklistItem {
       title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
       order: order ?? this.order,
+      category: category ?? this.category,
     );
   }
 }

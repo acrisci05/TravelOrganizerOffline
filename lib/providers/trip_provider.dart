@@ -80,6 +80,7 @@ class TripProvider extends ChangeNotifier {
     String? participants,
     String? notes,
     List<String> tags = const [],
+    TransportMode? transportMode,
   }) async {
     final trip = Trip(
       id: _uuid.v4(),
@@ -92,6 +93,7 @@ class TripProvider extends ChangeNotifier {
       participants: participants,
       notes: notes,
       tags: tags,
+      transportMode: transportMode,
     );
     await _repo.insert(trip);
     _trips.add(trip);
@@ -128,6 +130,7 @@ class TripProvider extends ChangeNotifier {
       participants: source.participants,
       notes: source.notes,
       tags: source.tags,
+      transportMode: source.transportMode,
     );
     await _repo.insert(copy);
     _trips.add(copy);

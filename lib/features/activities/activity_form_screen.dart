@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/stage_provider.dart';
+import '../../shared/widgets/local_image.dart';
 
 // Form di inserimento/modifica di un'attività: categoria, data/ora, luogo, costo,
 // tappa associata e stato. In modalità modifica precompila i campi esistenti.
@@ -30,10 +33,16 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
   late final TextEditingController _locationCtrl;
   late final TextEditingController _costCtrl;
   late final TextEditingController _notesCtrl;
+  // Controller per il pensiero del diario di viaggio.
+  late final TextEditingController _journalCtrl;
   DateTime? _dateTime;
   late ActivityCategory _category;
   late ActivityStatus _status;
   String? _stageId;
+  // Percorso della foto del diario selezionata (galleria o fotocamera).
+  String? _photoPath;
+  // Selettore di immagini nativo.
+  final ImagePicker _picker = ImagePicker();
   bool _isSaving = false;
 
   bool get _isEditing => widget.existingActivity != null;
@@ -48,10 +57,12 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
     _costCtrl =
         TextEditingController(text: a?.estimatedCost?.toString());
     _notesCtrl = TextEditingController(text: a?.notes);
+    _journalCtrl = TextEditingController(text: a?.journalNote);
     _dateTime = a?.dateTime;
     _category = a?.category ?? ActivityCategory.other;
     _status = a?.status ?? ActivityStatus.todo;
     _stageId = a?.stageId ?? widget.stageId;
+    _photoPath = a?.photoPath;
   }
 
   @override
@@ -61,6 +72,7 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
     _locationCtrl.dispose();
     _costCtrl.dispose();
     _notesCtrl.dispose();
+    _journalCtrl.dispose();
     super.dispose();
   }
 
@@ -194,6 +206,36 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
                   const InputDecoration(labelText: 'Note'),
               maxLines: 2,
             ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            // --- Diario di viaggio: pensiero + foto dal telefono ---
+            Row(
+              children: const [
+                Icon(Icons.menu_book_outlined,
+                    size: 20, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text('Diario di viaggio',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Annota un ricordo e aggiungi una foto di questa attività',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _journalCtrl,
+              decoration: const InputDecoration(
+                labelText: 'I miei ricordi',
+                prefixIcon: Icon(Icons.edit_note_outlined),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            _buildPhotoSection(),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _isSaving ? null : _save,
@@ -209,6 +251,79 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
         ),
       ),
     );
+  }
+
+  // True se è stata selezionata una foto valida.
+  bool get _hasPhoto => _photoPath != null && _photoPath!.isNotEmpty;
+
+  // Sezione foto: mostra l'anteprima con il pulsante per rimuoverla, oppure i
+  // pulsanti per scegliere un'immagine dalla galleria o scattarla.
+  Widget _buildPhotoSection() {
+    if (_hasPhoto) {
+      return Stack(
+        alignment: Alignment.topRight,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LocalImage(
+              path: _photoPath!,
+              width: double.infinity,
+              height: 180,
+            ),
+          ),
+          // Pulsante per rimuovere la foto (la stringa vuota indica "nessuna foto").
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: CircleAvatar(
+              backgroundColor: Colors.black54,
+              radius: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close,
+                    size: 16, color: Colors.white),
+                onPressed: () => setState(() => _photoPath = ''),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => _pickPhoto(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Galleria'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => _pickPhoto(ImageSource.camera),
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Fotocamera'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Apre galleria o fotocamera e salva il percorso dell'immagine selezionata.
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(
+          source: source, maxWidth: 1600, imageQuality: 80);
+      if (picked != null && mounted) {
+        setState(() => _photoPath = picked.path);
+      }
+    } catch (_) {
+      // Su alcune piattaforme la fotocamera potrebbe non essere disponibile.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossibile aprire la fotocamera/galleria')),
+        );
+      }
+    }
   }
 
   Future<void> _pickDateTime() async {
@@ -256,9 +371,12 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
           notes: _notesCtrl.text.isEmpty
               ? null
               : _notesCtrl.text.trim(),
+          // Diario: stringa vuota indica "nessun contenuto" (consente la rimozione).
+          journalNote: _journalCtrl.text.trim(),
+          photoPath: _photoPath ?? '',
         ));
       } else {
-        await provider.addActivity(
+        final created = await provider.addActivity(
           tripId: widget.tripId,
           stageId: _stageId,
           title: _titleCtrl.text.trim(),
@@ -275,6 +393,13 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
               ? null
               : _notesCtrl.text.trim(),
         );
+        // Se è stato compilato il diario, aggiorna l'attività appena creata.
+        if (_journalCtrl.text.trim().isNotEmpty || _hasPhoto) {
+          await provider.updateActivity(created.copyWith(
+            journalNote: _journalCtrl.text.trim(),
+            photoPath: _photoPath ?? '',
+          ));
+        }
       }
       if (mounted) Navigator.of(context).pop();
     } finally {
