@@ -1,0 +1,289 @@
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+% ============================================================
+% Pacchetti
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{eurosym}
+\usepackage{tikz}
+
+% ============================================================
+% Tema e colori (palette dell'app)
+% ============================================================
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\definecolor{appblue}{RGB}{21,101,192}
+\definecolor{appdark}{RGB}{0,60,143}
+\definecolor{appaccent}{RGB}{255,112,67}
+\definecolor{appgreen}{RGB}{67,160,71}
+\definecolor{applight}{RGB}{233,242,251}
+
+% Applica la palette ai vari elementi del tema
+\setbeamercolor{palette primary}{bg=appblue, fg=white}
+\setbeamercolor{palette secondary}{bg=appdark, fg=white}
+\setbeamercolor{palette tertiary}{bg=appdark, fg=white}
+\setbeamercolor{frametitle}{bg=appblue, fg=white}
+\setbeamercolor{title}{fg=appdark}
+\setbeamercolor{structure}{fg=appblue}
+\setbeamercolor{block title}{bg=appblue, fg=white}
+\setbeamercolor{block body}{bg=applight, fg=black}
+\setbeamercolor{item}{fg=appblue}
+\setbeamertemplate{navigation symbols}{} % nasconde i simboli di navigazione
+\setbeamertemplate{frametitle}[default][left]
+
+% Comando di comodo per una "card" colorata
+\newcommand{\card}[2]{%
+  \begin{beamercolorbox}[wd=\linewidth, sep=6pt, rounded=true, shadow=true]{block body}%
+    \textbf{\textcolor{appblue}{#1}}\\[2pt]\small #2%
+  \end{beamercolorbox}%
+}
+
+% ============================================================
+% Metadati
+% ============================================================
+\title[Travel Organizer Offline]{Travel Organizer Offline}
+\subtitle{App mobile in Flutter per organizzare i viaggi, anche offline}
+\author[Gruppo]{Gruppo \\ \small Componente 1 \and Componente 2 \and Componente 3}
+\institute[]{Mobile Programming -- A.A. 2025/2026}
+\date{Giugno 2026}
+
+\begin{document}
+
+% ---------- Frontespizio ----------
+\begin{frame}[plain]
+  \titlepage
+  \begin{center}
+    \begin{tikzpicture}
+      \fill[appblue, rounded corners=8pt] (0,0) rectangle (1.1,1.1);
+      \fill[white, rounded corners=2pt] (0.3,0.28) rectangle (0.8,0.72);
+      \fill[appblue] (0.3,0.5) rectangle (0.8,0.56);
+      \draw[white, line width=1.2pt, rounded corners=2pt] (0.42,0.72) rectangle (0.68,0.86);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% ---------- Indice ----------
+\begin{frame}{Indice}
+  \tableofcontents
+\end{frame}
+
+% ============================================================
+\section{L'idea}
+\begin{frame}{L'idea dell'app}
+  \begin{block}{Obiettivo}
+    Aiutare l'utente a \textbf{organizzare i propri viaggi} -- itinerari, tappe,
+    attività, checklist e spese -- mantenendo tutto disponibile
+    \textbf{anche senza connessione di rete}.
+  \end{block}
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \card{Il problema}{Le info di un viaggio sono sparse tra note, chat e siti
+      e richiedono una connessione per essere consultate.}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \card{La soluzione}{Un'unica app, \textbf{100\% offline}, senza backend né
+      API remote: i dati vivono sul dispositivo.}
+    \end{column}
+  \end{columns}
+  \vfill
+  \footnotesize \textbf{Utenti:} viaggiatori, studenti, famiglie -- chiunque
+  voglia tenere sotto controllo programma, bagaglio e budget.
+\end{frame}
+
+% ============================================================
+\section{Funzionalità principali}
+\begin{frame}{Funzionalità principali}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \textbf{Viaggi} -- CRUD, stato, budget, tag, modalità di viaggio
+        \item \textbf{Tappe / giornate} -- riordinabili con drag \& drop
+        \item \textbf{Attività} -- categoria, orario, luogo, costo, stato
+        \item \textbf{Checklist} -- documenti e cose da fare, con avanzamento
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \textbf{Spese} -- previste/effettive, budget
+        \item \textbf{Ricerca e filtri} -- su ogni entità + ricerca globale
+        \item \textbf{Statistiche} -- riepiloghi e grafici
+        \item \textbf{Calendario} -- vista mensile con marker
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{beamercolorbox}[wd=\linewidth, sep=5pt, rounded=true]{block title}
+    \centering Tutti i dati gestiti con \textbf{inserimento, modifica,
+    visualizzazione ed eliminazione} (CRUD completo).
+  \end{beamercolorbox}
+\end{frame}
+
+% ============================================================
+\section{Schermate principali}
+\begin{frame}{Le schermate più importanti}
+  \textbf{Navigazione a 4 sezioni} (Bottom Navigation Bar):
+  \vspace{0.3cm}
+  \begin{columns}[T]
+    \begin{column}{0.25\textwidth}
+      \card{Viaggi}{Elenco con ricerca, filtri e azioni rapide.}
+    \end{column}
+    \begin{column}{0.25\textwidth}
+      \card{Calendario}{Mese con marker per viaggi e attività.}
+    \end{column}
+    \begin{column}{0.25\textwidth}
+      \card{Statistiche}{Totali, grafici e salute del budget.}
+    \end{column}
+    \begin{column}{0.25\textwidth}
+      \card{Emergenza}{Dati medici e numeri utili.}
+    \end{column}
+  \end{columns}
+  \vspace{0.4cm}
+  \textbf{Dettaglio viaggio} -- 6 schede:
+  \begin{center}
+    \small Tappe \, $\cdot$ \, Attività \, $\cdot$ \, Checklist \, $\cdot$ \,
+    Spese \, $\cdot$ \, Timeline \, $\cdot$ \, Valigia
+  \end{center}
+\end{frame}
+
+% ============================================================
+\section{Scelte progettuali}
+\begin{frame}{Scelte progettuali}
+  \begin{block}{Architettura a livelli}
+    \centering
+    UI (Schermate) $\rightarrow$ Provider (Stato) $\rightarrow$ Repository
+    $\rightarrow$ Database SQLite
+  \end{block}
+  \vspace{0.2cm}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Pattern mobile}
+      \begin{itemize}\small
+        \item Stato con \texttt{provider} (ChangeNotifier)
+        \item Navigazione \texttt{Navigator} + passaggio dati
+        \item \texttt{IndexedStack} per i tab
+        \item Material 3, empty state, validazioni
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Persistenza}
+      \begin{itemize}\small
+        \item \texttt{sqflite} (locale, offline)
+        \item Chiavi esterne + eliminazione a cascata
+        \item Schema \textbf{versionato} con migrazioni
+        \item Repository per le query SQL
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Feature avanzate}
+\begin{frame}{Feature avanzate (1/2)}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \card{Packing list intelligente}{Tag del viaggio (Mare, Estero…)
+      $\Rightarrow$ oggetti suggeriti, \textbf{organizzati in sacchetti} con
+      avanzamento per sacchetto.}
+      \vspace{4pt}
+      \card{Budget ``gamification''}{Barra verde$\to$giallo$\to$rosso +
+      \textbf{ritmo di spesa}: ricalcola il budget giornaliero e avvisa sugli
+      sforamenti.}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \card{Timeline con tempi liberi}{Attività come blocchi colorati per
+      categoria; badge \emph{``Hai 3h di tempo libero''}.}
+      \vspace{4pt}
+      \card{Esporta / Importa viaggio}{Viaggio in JSON condiviso col menu
+      nativo e reimportabile su un altro dispositivo.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Feature avanzate (2/2)}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \card{Diario di viaggio con foto}{Per ogni attività: un ricordo + una foto
+      dalla galleria/fotocamera (\texttt{image\_picker}).}
+      \vspace{4pt}
+      \card{Notifiche locali}{Promemoria \textbf{30 min prima} di un'attività,
+      anche ad app chiusa (API native, nessun server).}
+      \vspace{4pt}
+      \card{Calendario interattivo}{Marker su partenze, ritorni e attività.}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \card{Sezione Emergenza (ICE)}{Dati medici locali + numeri di emergenza
+      \textbf{dedotti dal paese} di destinazione (112, 911, 110/119…).}
+      \vspace{4pt}
+      \card{Ricerca globale ``Spotlight''}{Cerca in tempo reale tra viaggi,
+      tappe, attività e spese, con risultati raggruppati.}
+      \vspace{4pt}
+      \card{Duplicazione}{Di viaggi, tappe e checklist.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Dati e integrità}
+\begin{frame}{Integrità e coerenza dei dati}
+  \begin{itemize}
+    \item \textbf{Niente viaggi sovrapposti}: bloccate le date che si accavallano.
+    \item \textbf{Eliminazione a cascata}: cancellando un viaggio si rimuovono
+    tappe, attività, checklist e spese; le statistiche si aggiornano subito.
+    \item \textbf{Validazioni}: date coerenti e campi obbligatori.
+    \item \textbf{Test automatici}: avvio app, integrità date, esporta/importa,
+    dati di esempio.
+  \end{itemize}
+  \vfill
+  \begin{beamercolorbox}[wd=\linewidth, sep=5pt, rounded=true]{block title}
+    \centering 4 viaggi di esempio precaricati: Tokyo, Barcellona, Roma
+    (conclusi) e \textbf{Parigi} (itinerario completo, 27 ott -- 1 nov 2026).
+  \end{beamercolorbox}
+\end{frame}
+
+% ============================================================
+\section{Difficoltà e demo}
+\begin{frame}{Difficoltà incontrate}
+  \begin{itemize}
+    \item \textbf{Integrazioni native multipiattaforma} (notifiche, fotocamera):
+    gestite con ``guardie'' che le rendono inoffensive su Web e nei test.
+    \item \textbf{Fusi orari} per le notifiche programmate: risolto con la
+    libreria \texttt{timezone}.
+    \item \textbf{Foto cross-platform}: percorso file su mobile, URL su Web --
+    un widget dedicato sceglie come caricarle.
+    \item \textbf{Evoluzione dello schema} senza perdere i dati: introdotte le
+    \textbf{migrazioni} del database.
+    \item \textbf{Coerenza delle statistiche} dopo le eliminazioni: allineamento
+    delle cache in memoria.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Demo dell'app}
+  \begin{block}{Percorso della demo dal vivo}
+    \begin{enumerate}\small
+      \item Apertura su \textbf{Parigi} (viaggio in programma) e itinerario.
+      \item Scheda \textbf{Valigia}: ``Genera lista'' $\rightarrow$ sacchetti.
+      \item Scheda \textbf{Spese}: barra del budget e ritmo di spesa.
+      \item \textbf{Timeline} con i tempi liberi.
+      \item \textbf{Diario}: aggiunta di una foto a un'attività.
+      \item \textbf{Calendario}, \textbf{Ricerca globale} ed \textbf{Emergenza}.
+      \item \textbf{Esporta} un viaggio e mostra il menu di condivisione.
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+% ============================================================
+\begin{frame}[plain]
+  \begin{center}
+    \vspace{1.5cm}
+    {\Huge \textcolor{appblue}{\textbf{Grazie!}}}\\[0.6cm]
+    {\Large Travel Organizer Offline}\\[0.2cm]
+    \small Domande?
+  \end{center}
+\end{frame}
+
+\end{document}
