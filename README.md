@@ -4,7 +4,12 @@ Applicazione mobile sviluppata in **Flutter** per la pianificazione e la gestion
 **completamente offline** di viaggi, itinerari, tappe, attività, checklist e spese.
 
 Il progetto è stato realizzato per l'esame di *Mobile Programming* (A.A. 2025/2026)
-seguendo la traccia *"Travel Organizer Offline App"*.
+seguendo la traccia *"Travel Organizer Offline App"* (traccia progettuale n. 1).
+
+## Autori — Gruppo 5
+
+- **Crisci Antonio** — 0612609486
+- **Oberto Leonardo Pio Pompeo** — 0622706053
 
 ---
 
