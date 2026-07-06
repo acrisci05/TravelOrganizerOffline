@@ -1,42 +1,96 @@
-## ProgettoMobilePrivato
-# To-do list:
-1. Controllare perché il bilancio delle spese totali non risulta, non conta il costo delle attività
-2. ✔️ Controllare lo stato del viaggio (Archiviato, In corso, Futuro e Passato)
-    - l'Errore stava nel trips_list_screen.dart che non prendeva il valore di status ma di computedstatus. Controllare bene poi il funzionamento
-3. ✔️Controllare l'ordinamento dei viaggi (1: in corso, 2: Futuro, 3:Passato/Archiviato)
-    - Modifica in trips_lsit_screen e trip_provider
-4. ✔️Cambiare il colore delle cards in base allo stato (che viene calcolato ogni volta che viene caricata la schermata dei viaggi)
-    controllare anche il filtro per data in modo che facci aselezionare solo le date del viaggio
-    - Modifica trips/trip_form_screen.dart
-7. ✔️Visualizzare gli archiviati a parte
-    - Modifica di trips_list_screen.dart e trip_provider.dart
-8. ✔️Si possono aggiungere spese in negativo alle singole trips, alle attività
-    - Ho modificato feature/expenses/expense_form_screen.dart, feature/activities/activity_form_screen.dart
-9. ✔️Controllare il segmento valigia perché utilizza AI per generare una valigia
-    - non usa AI ma un array popolato dai vari oggetti
-10. ✔️Le checklist devono apparire chiuse e si aprono al touch della lista
-    - Ho modificato features/checklists/checklists_screen.dart
-11. ✔️Se la checklist "🧳 Valigia " esiste, deve scomparire il pulsante "Genera valigia"
-    - Ho modificato packing/packing_list_screen.dart
-12. ❌Gli elementi della valigia generata deve essere forse più corta
-13. Le spese delle attività non compaiono nelle spese totali delle statistics
-14. ✔️Nei viaggi si possono mettere date prima di oggi sia alla modifica che alla creazione
-    - esce un messaggio di conferma, ho modificato trips_lsit+screen, trip_form_scree, e app_colors
-15. ✔️Nelle tappe va fatto un controllo sulla data scelta in modo che sia contenuta all'interno del viaggio
-    - Ho modificato stage_form_screen.dart
-16. ✔️Le timeline risultano aperte e dovrebbero FORSE essere chiuse di default come le checklists
-    - Ho modificato timeline_screen.dart
-17. ✔️Date picker del filtro deve essere compreso tra data di inizio e data di fine del trip
-    - Ho cambiato activity_form_screen.dart
-18. ❌Quando non si sceglie la data dellá ttivitàq va presa la data della tappa associata (se c'è)
-    - Ripensandoci si può anche non scegliere la data, bisogna però che la data dell'attività scelta
-19. ✔️Aggiustato l'ordine delle tappe nel loro ordine vero piuttosto che alfabetico
-    - Ho modificato stages_tab.dart
-20. ✔️Timeline deve essere sempre ordinata per data e basta
-    - Ho cambiato timeline_screen.dart
-21. ✔️Le attività possono essere filtrate per data oppure possono essere ordinate per nome, priorità o data. Il dato filtra per data è presente all'interno del pulsante con icona affianco alla searchbar
-    - Ho cambiato stage_tab.dart
-22. ✔️Le attività adesso possono cambiare tappa associata e data/ora
-    - activity_form_screen.dart, activity.dart
-23. Le attività checckate e con un prezzo devono contribuire alle spese effettive, eventualmente devo aggiungere un'altra riga alla sezione delle statistiche totali
-24. Fare in modo che il tag si aggiorni automaticamente come lo sfondo delle carte dei viaggi
+# Travel Organizer Offline
+
+Applicazione mobile sviluppata in **Flutter** per la pianificazione e la gestione
+**completamente offline** di viaggi, itinerari, tappe, attività, checklist e spese.
+
+Il progetto è stato realizzato per l'esame di *Mobile Programming* (A.A. 2025/2026)
+seguendo la traccia *"Travel Organizer Offline App"*.
+
+---
+
+## Funzionalità principali
+
+- **Gestione dei viaggi**: creazione, modifica, eliminazione e consultazione del
+  dettaglio di ogni viaggio (titolo, destinazione, date, budget, partecipanti, note,
+  stato calcolato automaticamente: futuro, in corso, completato, archiviato).
+- **Tappe / giornate**: organizzazione del viaggio in tappe ordinabili (drag & drop),
+  ciascuna con data, località, descrizione e note.
+- **Attività / itinerario**: pianificazione delle attività (visite, escursioni, pasti,
+  trasporti, prenotazioni…) associate al viaggio e/o a una tappa, con categoria,
+  data/ora, luogo, costo previsto e stato (da fare, completata, annullata).
+- **Checklist**: liste di controllo con elementi spuntabili e barra di avanzamento.
+- **Spese**: registrazione delle spese previste ed effettive con categoria, importo,
+  metodo di pagamento e confronto con il budget del viaggio.
+- **Ricerca, filtri e ordinamento**: ricerca viaggi per titolo/destinazione, filtri per
+  stato, categoria, data e importo, ordinamento delle tappe.
+- **Riepiloghi e statistiche**: dashboard con totali, conteggi per stato, grafico a
+  torta delle spese per categoria, confronto budget/spese e classifica delle tappe con
+  più attività.
+
+## Feature avanzate
+
+1. **Duplicazione completa del viaggio**: copia un viaggio con tutte le sue tappe,
+   attività e checklist (con rimappatura corretta delle associazioni tappa↔attività).
+2. **Packing list per tipo di viaggio**: generazione automatica della lista valigia in
+   base al tipo di viaggio scelto dall'utente (mare, montagna, città, business,
+   avventura, inverno).
+3. **Timeline dell'itinerario**: vista cronologica di tappe e attività del viaggio.
+
+---
+
+## Requisiti
+
+- Flutter SDK **3.44+** (Dart 3.11+)
+- Un dispositivo/emulatore Android, oppure supporto Web/desktop
+
+## Esecuzione
+
+```bash
+flutter pub get
+flutter run
+```
+
+Al primo avvio, se il database locale è vuoto, l'app viene popolata con alcuni dati di
+esempio (tre viaggi con relative tappe, attività, checklist e spese).
+
+---
+
+## Architettura
+
+Il progetto adopera un'architettura a livelli con separazione delle responsabilità:
+
+```
+lib/
+├── core/          # tema, colori e utility (formattazione date/valuta)
+├── data/
+│   ├── models/        # modelli di dominio (Trip, Stage, Activity, Checklist, Expense…)
+│   ├── database/      # DatabaseHelper (SQLite, schema, indici)
+│   ├── repositories/  # accesso ai dati (una repository per entità)
+│   └── seed/          # dati demo iniziali
+├── providers/     # gestione dello stato (ChangeNotifier + Provider)
+├── features/      # schermate raggruppate per funzionalità
+└── shared/        # widget riutilizzabili (dialog, empty state, chip di stato)
+```
+
+- **Persistenza**: database locale **SQLite** tramite `sqflite`
+  (`sqflite_common_ffi_web` per l'esecuzione su Web).
+- **Gestione dello stato**: pattern **Provider** con `ChangeNotifier`.
+- **Navigazione**: `Navigator` con `MaterialPageRoute` e passaggio esplicito dei dati
+  tra schermate; navigazione a tab all'interno del dettaglio viaggio.
+
+## Librerie principali
+
+| Libreria | Utilizzo |
+|----------|----------|
+| `provider` | gestione dello stato |
+| `sqflite` / `sqflite_common_ffi_web` | persistenza locale |
+| `uuid` | generazione identificatori univoci |
+| `intl` | formattazione di date e valuta in italiano |
+| `fl_chart` | grafici nella dashboard statistiche |
+
+---
+
+## Documentazione
+
+La relazione tecnica completa è disponibile nella cartella [`docs/`](docs/) in formato
+LaTeX (`relazione.tex`).

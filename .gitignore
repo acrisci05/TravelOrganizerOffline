@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android SDK command-line tools inseriti per errore nella cartella lib/
+lib/cmdline-tools/
