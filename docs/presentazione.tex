@@ -56,6 +56,14 @@
 % Riga con spunta verde
 \newcommand{\ok}{\textcolor{green!55!black}{\ding{51}}~}
 
+% Screenshot della demo: usa l'immagine reale se presente in img/,
+% altrimenti mostra il mockup stilizzato. {nomefile}{etichetta mockup}
+\newcommand{\demoshot}[2]{%
+  \IfFileExists{img/#1}{%
+    \setlength{\fboxsep}{0pt}\setlength{\fboxrule}{1pt}%
+    \fcolorbox{primary!45}{white}{\includegraphics[height=5.2cm]{img/#1}}%
+  }{\phone{#2}}}
+
 % Mockup stilizzato di uno smartphone: {etichetta}
 \newcommand{\phone}[1]{%
   \begin{tikzpicture}
@@ -258,16 +266,20 @@
 
 % ---------------- Demo / schermate ----------------
 \begin{frame}{Demo dal vivo}
+  % Gli screenshot reali si inseriscono salvandoli in docs/img/ con i nomi
+  % 01_viaggi.png, 02_dettaglio.png, 03_statistiche.png: compaiono in automatico.
   \begin{center}
-  \begin{tikzpicture}
-    \node (a) {\phone{I Miei Viaggi}};
-    \node (b) [right=0.7cm of a] {\phone{Dettaglio}};
-    \node (c) [right=0.7cm of b] {\phone{Statistiche}};
+  \begin{tikzpicture}[lbl/.style={font=\scriptsize\bfseries\color{primary}}]
+    \node (a) {\demoshot{01_viaggi.png}{I Miei Viaggi}};
+    \node[lbl, below=2pt of a] {Elenco viaggi};
+    \node (b) [right=0.7cm of a] {\demoshot{02_dettaglio.png}{Dettaglio}};
+    \node[lbl, below=2pt of b] {Dettaglio viaggio};
+    \node (c) [right=0.7cm of b] {\demoshot{03_statistiche.png}{Statistiche}};
+    \node[lbl, below=2pt of c] {Statistiche};
   \end{tikzpicture}
   \end{center}
-  \vspace{0.2cm}
+  \vspace{0.15cm}
   \begin{center}\small\color{soft}
-    % Suggerimento: qui si possono inserire screenshot reali dell'app.
     Percorso della demo: elenco viaggi $\rightarrow$ dettaglio (tappe, attività, valigia)
     $\rightarrow$ duplica viaggio $\rightarrow$ statistiche.
   \end{center}
