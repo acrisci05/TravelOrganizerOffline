@@ -4,10 +4,13 @@ import '../data/models/checklist.dart';
 import '../data/models/checklist_item.dart';
 import '../data/repositories/checklist_repository.dart';
 
+// Provider che gestisce lo stato delle checklist e dei relativi elementi,
+// indicizzati per viaggio. Include la duplicazione delle checklist.
 class ChecklistProvider extends ChangeNotifier {
   final ChecklistRepository _repo = ChecklistRepository();
   final _uuid = const Uuid();
 
+  // Cache in memoria: idViaggio -> elenco checklist del viaggio.
   final Map<String, List<Checklist>> _checklistsByTrip = {};
 
   List<Checklist> getByTrip(String tripId) =>
@@ -123,6 +126,42 @@ class ChecklistProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Duplica tutte le checklist di un viaggio (con i relativi elementi) verso
+  // un nuovo viaggio. La mappa [stageIdMap] (idTappaOriginale -> idTappaCopiata)
+  // consente di mantenere l'eventuale associazione a una tappa. Gli elementi
+  // vengono copiati come "da completare" perché il viaggio duplicato è una
+  // nuova pianificazione.
+  Future<void> duplicateChecklistsForTrip(
+    String sourceTripId,
+    String newTripId,
+    Map<String, String> stageIdMap,
+  ) async {
+    final checklists = await _repo.getByTrip(sourceTripId);
+    for (final source in checklists) {
+      final newChecklistId = _uuid.v4();
+      final copy = Checklist(
+        id: newChecklistId,
+        tripId: newTripId,
+        stageId:
+            source.stageId == null ? null : stageIdMap[source.stageId],
+        title: source.title,
+        description: source.description,
+        items: source.items
+            .map((i) => ChecklistItem(
+                  id: _uuid.v4(),
+                  checklistId: newChecklistId,
+                  title: i.title,
+                  isCompleted: false,
+                  order: i.order,
+                ))
+            .toList(),
+      );
+      await _repo.insertChecklist(copy);
+    }
+    await loadForTrip(newTripId);
+  }
+
+  // Duplica una singola checklist all'interno dello stesso viaggio.
   Future<void> duplicateChecklist(
       String tripId, String checklistId) async {
     final list = _checklistsByTrip[tripId] ?? [];

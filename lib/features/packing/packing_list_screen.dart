@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/checklist.dart';
+import '../../data/models/packing_template.dart';
 import '../../providers/checklist_provider.dart';
 
+// Schermata "Valigia": mostra la lista degli oggetti da portare in viaggio
+// come checklist dedicata. Implementa la feature avanzata di generazione
+// automatica della packing list a partire dal tipo di viaggio scelto
+// dall'utente (vedi packing_template.dart).
 class PackingListScreen extends StatefulWidget {
   final String tripId;
   const PackingListScreen({super.key, required this.tripId});
@@ -13,36 +18,9 @@ class PackingListScreen extends StatefulWidget {
 }
 
 class _PackingListScreenState extends State<PackingListScreen> {
+  // Titolo della checklist usata come lista valigia: è univoco per viaggio
+  // così da poterla riconoscere e non ricrearla ad ogni apertura.
   static const _packingTitle = '🧳 Lista Valigia';
-
-  static const _defaultItems = [
-    '👕 T-shirt',
-    '👖 Pantaloni',
-    '👟 Scarpe',
-    '🧥 Giacca / Maglione',
-    '🩲 Biancheria intima',
-    '🧦 Calzini',
-    '😴 Pigiama',
-    '🛂 Passaporto / Carta d\'identità',
-    '🎫 Biglietti di viaggio',
-    '📋 Assicurazione viaggio',
-    '🏨 Conferme prenotazioni',
-    '📱 Caricabatterie telefono',
-    '🔋 Power bank',
-    '🎧 Cuffie',
-    '🔌 Adattatore presa',
-    '🪥 Spazzolino e dentifricio',
-    '🧴 Shampoo e balsamo',
-    '🧼 Sapone / Gel doccia',
-    '🪒 Rasoio / Depilatore',
-    '🧴 Deodorante',
-    '💊 Farmaci personali',
-    '🩹 Kit pronto soccorso',
-    '☀️ Crema solare',
-    '😎 Occhiali da sole',
-    '☂️ Ombrello',
-    '📷 Fotocamera',
-  ];
 
   String? _checklistId;
   final _addCtrl = TextEditingController();
@@ -88,14 +66,31 @@ class _PackingListScreenState extends State<PackingListScreen> {
         .firstOrNull;
   }
 
-  Future<void> _generateDefault() async {
+  // Mostra un menu inferiore per far scegliere all'utente il tipo di viaggio
+  // e, in base alla scelta, genera la packing list corrispondente.
+  Future<void> _generateFromType() async {
+    final type = await showModalBottomSheet<TripType>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => const _TripTypePicker(),
+    );
+    if (type == null) return;
+    await _generateForType(type);
+  }
+
+  // Aggiunge alla lista valigia gli oggetti previsti per il tipo di viaggio
+  // selezionato, saltando quelli eventualmente già presenti (per non creare
+  // duplicati se la lista è stata già generata o compilata a mano).
+  Future<void> _generateForType(TripType type) async {
     if (!mounted) return;
     final provider = context.read<ChecklistProvider>();
     final cl = _getChecklist(provider);
     if (cl == null) return;
     final existing = cl.items.map((i) => i.title).toSet();
     int added = 0;
-    for (final item in _defaultItems) {
+    for (final item in type.buildPackingList()) {
       if (!existing.contains(item)) {
         await provider.addItem(widget.tripId, cl.id, item);
         added++;
@@ -106,8 +101,8 @@ class _PackingListScreenState extends State<PackingListScreen> {
         SnackBar(
           content: Text(
             added > 0
-                ? '$added elementi aggiunti alla lista'
-                : 'Lista già completa',
+                ? '$added oggetti aggiunti per un viaggio "${type.label}"'
+                : 'Nessun nuovo oggetto da aggiungere',
           ),
         ),
       );
@@ -141,11 +136,11 @@ class _PackingListScreenState extends State<PackingListScreen> {
                 completed: cl.completedItems,
                 total: cl.totalItems,
                 progress: cl.progress,
-                onGenerate: _generateDefault,
+                onGenerate: _generateFromType,
               ),
               Expanded(
                 child: cl.items.isEmpty
-                    ? _EmptyPackingState(onGenerate: _generateDefault)
+                    ? _EmptyPackingState(onGenerate: _generateFromType)
                     : ListView.builder(
                         padding: const EdgeInsets.only(bottom: 100),
                         itemCount: cl.items.length,
@@ -285,7 +280,7 @@ class _ProgressHeader extends StatelessWidget {
                 size: 18,
               ),
               label: const Text(
-                'Genera lista',
+                'Genera valigia',
                 style: TextStyle(color: Colors.white, fontSize: 13),
               ),
               style: TextButton.styleFrom(
@@ -325,7 +320,8 @@ class _EmptyPackingState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Aggiungi oggetti manualmente o genera una lista base',
+            'Aggiungi oggetti manualmente oppure genera la valigia\n'
+            'in base al tipo di viaggio',
             style: TextStyle(fontSize: 13, color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
@@ -333,9 +329,47 @@ class _EmptyPackingState extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onGenerate,
             icon: const Icon(Icons.auto_awesome),
-            label: const Text('Genera lista base'),
+            label: const Text('Genera in base al tipo di viaggio'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Menu inferiore per la scelta del tipo di viaggio. Restituisce, tramite
+// Navigator.pop, il TripType selezionato (oppure null se l'utente annulla).
+class _TripTypePicker extends StatelessWidget {
+  const _TripTypePicker();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Che tipo di viaggio è?',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'La valigia verrà generata con gli oggetti più adatti',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            ...TripType.values.map(
+              (type) => ListTile(
+                leading: Text(type.icon, style: const TextStyle(fontSize: 24)),
+                title: Text(type.label),
+                onTap: () => Navigator.of(context).pop(type),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

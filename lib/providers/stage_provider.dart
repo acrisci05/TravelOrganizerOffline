@@ -3,10 +3,14 @@ import 'package:uuid/uuid.dart';
 import '../data/models/stage.dart';
 import '../data/repositories/stage_repository.dart';
 
+// Provider che gestisce lo stato delle tappe. Le tappe sono tenute in una
+// mappa indicizzata per viaggio, così da poter caricare e aggiornare in modo
+// indipendente le tappe di ciascun viaggio.
 class StageProvider extends ChangeNotifier {
   final StageRepository _repo = StageRepository();
   final _uuid = const Uuid();
 
+  // Cache in memoria: idViaggio -> elenco tappe del viaggio.
   final Map<String, List<Stage>> _stagesByTrip = {};
 
   List<Stage> getByTrip(String tripId) => _stagesByTrip[tripId] ?? [];
@@ -67,12 +71,19 @@ class StageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> duplicateStagesForTrip(
+  // Duplica tutte le tappe di un viaggio verso un nuovo viaggio.
+  // Restituisce una mappa (idTappaOriginale -> idTappaCopiata) che serve
+  // ai provider di attività e checklist per ricollegare correttamente gli
+  // elementi alle nuove tappe durante la duplicazione completa del viaggio.
+  Future<Map<String, String>> duplicateStagesForTrip(
       String sourceTripId, String newTripId) async {
     final stages = await _repo.getByTrip(sourceTripId);
+    final idMap = <String, String>{};
     for (final s in stages) {
+      final newId = _uuid.v4();
+      idMap[s.id] = newId;
       final copy = Stage(
-        id: _uuid.v4(),
+        id: newId,
         tripId: newTripId,
         title: s.title,
         date: s.date,
@@ -84,6 +95,7 @@ class StageProvider extends ChangeNotifier {
       await _repo.insert(copy);
     }
     await loadForTrip(newTripId);
+    return idMap;
   }
 
   void clearForTrip(String tripId) {

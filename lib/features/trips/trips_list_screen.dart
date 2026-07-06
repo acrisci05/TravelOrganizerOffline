@@ -9,6 +9,8 @@ import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/confirm_dialog.dart';
 import 'trip_form_screen.dart';
 import '../../providers/stage_provider.dart';
+import '../../providers/activity_provider.dart';
+import '../../providers/checklist_provider.dart';
 import 'trip_detail_screen.dart';
 
 class TripsListScreen extends StatefulWidget {
@@ -252,7 +254,6 @@ class _TripCard extends StatelessWidget {
                     ),
                   ),
                   StatusChip.trip(trip.status),
-                  // StatusChip.trip(status),
                 ],
               ),
               const SizedBox(height: 6),
@@ -370,26 +371,45 @@ class _TripCard extends StatelessWidget {
     );
   }
 
+  // Colore di sfondo della card in base allo stato (calcolato) del viaggio.
   Color _backgroundForStatus(TripStatus status) {
     switch (status) {
       case TripStatus.future:
-        return const Color.fromARGB(255, 0, 0, 255).withOpacity(0.2);
+        return const Color.fromARGB(255, 0, 0, 255).withValues(alpha: 0.2);
       case TripStatus.ongoing:
-        return const Color.fromARGB(255, 255, 255, 0).withOpacity(0.2);
+        return const Color.fromARGB(255, 255, 255, 0).withValues(alpha: 0.2);
       case TripStatus.completed:
-        return const Color.fromARGB(255, 0, 255, 0).withOpacity(0.2);
+        return const Color.fromARGB(255, 0, 255, 0).withValues(alpha: 0.2);
       case TripStatus.archived:
-        return AppColors.statusArchived.withOpacity(0.1);
+        return AppColors.statusArchived.withValues(alpha: 0.1);
     }
   }
 
+  // Duplicazione completa del viaggio (feature avanzata): oltre al viaggio
+  // vengono copiate anche tappe, attività e checklist. L'ordine delle chiamate
+  // è importante perché la mappa degli id delle tappe, restituita dalla
+  // duplicazione delle tappe, serve a ricollegare correttamente attività e
+  // checklist alle nuove tappe.
   Future<void> _duplicate(BuildContext context) async {
     final tripProvider = context.read<TripProvider>();
     final stageProvider = context.read<StageProvider>();
+    final activityProvider = context.read<ActivityProvider>();
+    final checklistProvider = context.read<ChecklistProvider>();
     final messenger = ScaffoldMessenger.of(context);
+
     final newTrip = await tripProvider.duplicateTrip(trip);
-    await stageProvider.duplicateStagesForTrip(trip.id, newTrip.id);
-    messenger.showSnackBar(const SnackBar(content: Text('Viaggio duplicato')));
+    final stageIdMap =
+        await stageProvider.duplicateStagesForTrip(trip.id, newTrip.id);
+    await activityProvider.duplicateActivitiesForTrip(
+        trip.id, newTrip.id, stageIdMap);
+    await checklistProvider.duplicateChecklistsForTrip(
+        trip.id, newTrip.id, stageIdMap);
+
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Viaggio duplicato con tappe, attività e checklist'),
+      ),
+    );
   }
 
   void _edit(BuildContext context) {

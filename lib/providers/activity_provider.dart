@@ -3,10 +3,14 @@ import 'package:uuid/uuid.dart';
 import '../data/models/activity.dart';
 import '../data/repositories/activity_repository.dart';
 
+// Provider che gestisce lo stato delle attività, indicizzate per viaggio.
+// Offre viste filtrate (per tappa, per categoria, non assegnate) e i conteggi
+// usati nelle statistiche.
 class ActivityProvider extends ChangeNotifier {
   final ActivityRepository _repo = ActivityRepository();
   final _uuid = const Uuid();
 
+  // Cache in memoria: idViaggio -> elenco attività del viaggio.
   final Map<String, List<Activity>> _activitiesByTrip = {};
 
   List<Activity> getByTrip(String tripId) => _activitiesByTrip[tripId] ?? [];
@@ -89,6 +93,37 @@ class ActivityProvider extends ChangeNotifier {
     await _repo.delete(activityId);
     _activitiesByTrip[tripId]?.removeWhere((a) => a.id == activityId);
     notifyListeners();
+  }
+
+  // Duplica tutte le attività di un viaggio verso un nuovo viaggio.
+  // La mappa [stageIdMap] (idTappaOriginale -> idTappaCopiata) permette di
+  // ricollegare ogni attività alla corrispondente tappa duplicata; se
+  // l'attività non era associata ad alcuna tappa resta senza tappa.
+  // Lo stato viene riportato a "da fare" perché il viaggio copiato è una
+  // nuova pianificazione ancora tutta da svolgere.
+  Future<void> duplicateActivitiesForTrip(
+    String sourceTripId,
+    String newTripId,
+    Map<String, String> stageIdMap,
+  ) async {
+    final activities = await _repo.getByTrip(sourceTripId);
+    for (final a in activities) {
+      final copy = Activity(
+        id: _uuid.v4(),
+        tripId: newTripId,
+        stageId: a.stageId == null ? null : stageIdMap[a.stageId],
+        title: a.title,
+        description: a.description,
+        dateTime: a.dateTime,
+        location: a.location,
+        category: a.category,
+        estimatedCost: a.estimatedCost,
+        status: ActivityStatus.todo,
+        notes: a.notes,
+      );
+      await _repo.insert(copy);
+    }
+    await loadForTrip(newTripId);
   }
 
   int completedCount(String tripId) =>

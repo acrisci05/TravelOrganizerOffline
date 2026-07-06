@@ -3,6 +3,9 @@ import 'package:uuid/uuid.dart';
 import '../data/models/trip.dart';
 import '../data/repositories/trip_repository.dart';
 
+// Provider (ChangeNotifier) che gestisce lo stato dei viaggi in memoria:
+// caricamento dal database, ricerca, filtri, ordinamento e operazioni CRUD.
+// Notifica la UI ad ogni variazione tramite notifyListeners().
 class TripProvider extends ChangeNotifier {
   final TripRepository _repo = TripRepository();
   final _uuid = const Uuid();
@@ -129,7 +132,9 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Duplicare il trip
+  // Duplica il solo record del viaggio (senza tappe/attività/checklist).
+  // La copia parte sempre come viaggio "futuro". La duplicazione dei dati
+  // collegati è orchestrata dai rispettivi provider a partire dal nuovo id.
   Future<Trip> duplicateTrip(Trip source) async {
     final newId = _uuid.v4();
     final copy = Trip(
