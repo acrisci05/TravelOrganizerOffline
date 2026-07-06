@@ -1,3 +1,7 @@
+// Modello di dominio del viaggio, entità principale dell'applicazione.
+// Un viaggio raggruppa tappe, attività, checklist e spese ad esso collegate.
+
+/// Stato del viaggio: futuro, in corso, completato o archiviato.
 enum TripStatus { future, ongoing, completed, archived }
 
 extension TripStatusExtension on TripStatus {
@@ -42,8 +46,12 @@ class Trip {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
+  /// Durata del viaggio in giorni (estremi inclusi).
   int get durationDays => endDate.difference(startDate).inDays + 1;
 
+  /// Stato calcolato in base alla data odierna: un viaggio archiviato resta
+  /// tale, altrimenti è futuro (prima dell'inizio), completato (dopo la fine)
+  /// oppure in corso.
   TripStatus get computedStatus {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

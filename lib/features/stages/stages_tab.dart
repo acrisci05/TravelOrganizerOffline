@@ -119,7 +119,7 @@ class _StagesTabState extends State<StagesTab> {
                     : ReorderableListView.builder(
                         padding: const EdgeInsets.only(bottom: 80, top: 8),
                         itemCount: stages.length,
-                        onReorder: (old, newIdx) =>
+                        onReorderItem: (old, newIdx) =>
                             _reorder(context, allStages, old, newIdx),
                         itemBuilder: (ctx, i) => _StageCard(
                           key: ValueKey(stages[i].id),
@@ -166,13 +166,15 @@ class _StagesTabState extends State<StagesTab> {
     );
   }
 
+  // Riordina le tappe dopo un trascinamento e persiste il nuovo ordine.
+  // Con onReorderItem gli indici sono già coerenti con la lista dopo la
+  // rimozione dell'elemento, quindi non serve alcuna correzione manuale.
   Future<void> _reorder(
     BuildContext context,
     List<Stage> stages,
     int oldIndex,
     int newIndex,
   ) async {
-    if (newIndex > oldIndex) newIndex--;
     final provider = context.read<StageProvider>();
     final moved = stages[oldIndex];
     final reordered = List<Stage>.from(stages)
@@ -286,35 +288,31 @@ class _FilterSheet extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
-          RadioListTile<StageSortType>(
-            value: StageSortType.order,
+          // La scelta del criterio di ordinamento viene restituita al chiamante
+          // chiudendo il menu inferiore con il valore selezionato.
+          RadioGroup<StageSortType>(
             groupValue: selected,
-            title: const Text('Priorità'),
             onChanged: (value) {
               if (value != null) {
                 Navigator.pop(context, value);
               }
             },
-          ),
-          RadioListTile<StageSortType>(
-            value: StageSortType.date,
-            groupValue: selected,
-            title: const Text('Data'),
-            onChanged: (value) {
-              if (value != null) {
-                Navigator.pop(context, value);
-              }
-            },
-          ),
-          RadioListTile<StageSortType>(
-            value: StageSortType.title,
-            groupValue: selected,
-            title: const Text('Nome'),
-            onChanged: (value) {
-              if (value != null) {
-                Navigator.pop(context, value);
-              }
-            },
+            child: const Column(
+              children: [
+                RadioListTile<StageSortType>(
+                  value: StageSortType.order,
+                  title: Text('Priorità'),
+                ),
+                RadioListTile<StageSortType>(
+                  value: StageSortType.date,
+                  title: Text('Data'),
+                ),
+                RadioListTile<StageSortType>(
+                  value: StageSortType.title,
+                  title: Text('Nome'),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Text('Filtra per data', style:Theme.of(context).textTheme.titleMedium,),

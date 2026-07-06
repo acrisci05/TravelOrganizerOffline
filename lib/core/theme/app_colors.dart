@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// Palette centralizzata dei colori dell'applicazione: colori primari, di
+// sfondo, del testo e colori semantici (successo, avviso, errore, stati).
 class AppColors {
   static const primary = Color(0xFF1565C0);
   static const primaryDark = Color(0xFF003c8f);

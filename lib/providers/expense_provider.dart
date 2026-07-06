@@ -3,10 +3,14 @@ import 'package:uuid/uuid.dart';
 import '../data/models/expense.dart';
 import '../data/repositories/expense_repository.dart';
 
+// Provider che gestisce lo stato delle spese, indicizzate per viaggio.
+// Espone i totali (previsti/effettivi) e la ripartizione per categoria usati
+// nelle statistiche e nel confronto con il budget.
 class ExpenseProvider extends ChangeNotifier {
   final ExpenseRepository _repo = ExpenseRepository();
   final _uuid = const Uuid();
 
+  // Cache in memoria: idViaggio -> elenco spese del viaggio.
   final Map<String, List<Expense>> _expensesByTrip = {};
 
   List<Expense> getByTrip(String tripId) => _expensesByTrip[tripId] ?? [];

@@ -1,4 +1,11 @@
+// Modello di dominio dell'attività dell'itinerario (visite, escursioni,
+// pasti, spostamenti, prenotazioni, ecc.). Un'attività è collegata a un
+// viaggio e, facoltativamente, a una tappa.
+
+/// Stato di avanzamento dell'attività.
 enum ActivityStatus { todo, done, cancelled }
+
+/// Categoria dell'attività, usata per icona, filtri e raggruppamenti.
 enum ActivityCategory { visit, excursion, meal, transport, booking, event, free, other }
 
 extension ActivityStatusExtension on ActivityStatus {

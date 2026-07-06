@@ -82,7 +82,7 @@ class _StatsBodyState extends State<_StatsBody> {
     final clProvider = context.watch<ChecklistProvider>();
     final stageProvider = context.watch<StageProvider>();
 
-    // Global totals
+    // Totali globali su tutti i viaggi
     final totalActivities =
         trips.fold(0, (sum, t) => sum + actProvider.totalCount(t.id));
     final completedActivities =
@@ -99,7 +99,7 @@ class _StatsBodyState extends State<_StatsBody> {
     final completedCheckItems =
         allChecklists.fold(0, (sum, c) => sum + c.completedItems);
 
-    // Stages with most activities (top 5)
+    // Tappe con più attività pianificate (prime 5)
     final allStages =
         trips.expand((t) => stageProvider.getByTrip(t.id)).toList();
     final stagesRanked = allStages

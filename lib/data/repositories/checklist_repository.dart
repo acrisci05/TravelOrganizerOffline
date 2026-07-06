@@ -3,6 +3,8 @@ import '../database/database_helper.dart';
 import '../models/checklist.dart';
 import '../models/checklist_item.dart';
 
+// Repository di accesso ai dati delle checklist e dei loro elementi
+// (tabelle "checklists" e "checklist_items"), caricati insieme.
 class ChecklistRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 

@@ -4,6 +4,9 @@ import '../../data/models/trip.dart';
 import '../../data/models/activity.dart';
 import '../../data/models/expense.dart';
 
+// Etichetta colorata (chip) che rappresenta lo stato di viaggi, attività e
+// spese. I costruttori factory associano ad ogni stato l'etichetta e il
+// colore semantico corretti.
 class StatusChip extends StatelessWidget {
   final String label;
   final Color color;

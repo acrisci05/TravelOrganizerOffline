@@ -15,6 +15,9 @@ import 'providers/expense_provider.dart';
 import 'features/trips/trips_list_screen.dart';
 import 'features/stats/stats_screen.dart';
 
+// Punto di ingresso dell'applicazione. Inizializza la persistenza locale e la
+// localizzazione italiana, popola il database con dati demo al primo avvio e
+// avvia l'app registrando i provider di stato.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Inizializza SQLite via WebAssembly quando si gira sul web

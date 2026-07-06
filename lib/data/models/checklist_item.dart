@@ -1,3 +1,4 @@
+// Singolo elemento di una checklist, spuntabile come completato.
 class ChecklistItem {
   final String id;
   final String checklistId;

@@ -198,28 +198,32 @@ class _TripFormScreenState extends State<TripFormScreen> {
     );
     final endDay = DateTime(_endDate.year, _endDate.month, _endDate.day);
 
+    // Se le date sono nel passato chiediamo conferma esplicita all'utente,
+    // senza bloccare l'inserimento (potrebbe registrare un viaggio già svolto).
     if (startDay.isBefore(today)) {
       final confirmed = await ConfirmDialog.show(
         context,
         title: 'Conferma la data inserita',
         message:
             'La data di inizio del viaggio è precedente ad oggi. Vuoi continuare comunque?',
-            confirmLabel: 'Continua',
+        confirmLabel: 'Continua',
       );
       if (confirmed != true) return;
     }
 
     if (endDay.isBefore(today)) {
+      if (!mounted) return;
       final confirmed = await ConfirmDialog.show(
         context,
         title: 'Conferma la data inserita',
         message:
             'La data di fine del viaggio è precedente ad oggi. Vuoi continuare comunque?',
-            confirmLabel: 'Continua',
+        confirmLabel: 'Continua',
       );
       if (confirmed != true) return;
     }
 
+    if (!mounted) return;
     setState(() => _isSaving = true);
     try {
       final provider = context.read<TripProvider>();

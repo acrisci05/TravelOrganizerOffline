@@ -1,3 +1,5 @@
+// Modello di dominio della tappa (o giornata) di un viaggio.
+// Ogni tappa appartiene a un viaggio (tripId) e ha un ordine nell'itinerario.
 class Stage {
   final String id;
   final String tripId;

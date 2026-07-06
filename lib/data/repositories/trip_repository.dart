@@ -2,6 +2,9 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/trip.dart';
 
+// Repository di accesso ai dati dei viaggi: incapsula tutte le query SQL
+// sulla tabella "trips" (lettura, ricerca, filtri, inserimento, modifica,
+// cancellazione) esponendo metodi che lavorano su oggetti Trip.
 class TripRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
