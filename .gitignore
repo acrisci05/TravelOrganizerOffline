@@ -46,3 +46,12 @@ app.*.map.json
 
 # Android SDK command-line tools inseriti per errore nella cartella lib/
 lib/cmdline-tools/
+
+# File temporanei di compilazione LaTeX (si versionano solo .tex e .pdf)
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc
+docs/*.synctex.gz
+docs/*.fls
+docs/*.fdb_latexmk
