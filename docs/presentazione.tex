@@ -1,0 +1,295 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% ============================================================
+%  Slide di presentazione
+%  Travel Organizer Offline - Mobile Programming A.A. 2025/2026
+% ============================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pifont}   % \ding{51} = check, \ding{55} = croce
+\usetikzlibrary{shapes.geometric, positioning}
+
+% -------- Palette coerente con l'app --------
+\definecolor{primary}{RGB}{21,101,192}     % blu principale
+\definecolor{primarydark}{RGB}{0,60,143}   % blu scuro
+\definecolor{accent}{RGB}{255,112,67}      % arancio accento
+\definecolor{ink}{RGB}{33,33,33}
+\definecolor{soft}{RGB}{117,117,117}
+
+% -------- Tema minimale e pulito --------
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{frametitle}{bg=primary,fg=white}
+\setbeamercolor{footline}{bg=primarydark,fg=white}
+\setbeamercolor{block title}{bg=primary,fg=white}
+\setbeamercolor{block body}{bg=primary!8,fg=ink}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamerfont{frametitle}{series=\bfseries,size=\large}
+\setbeamerfont{title}{series=\bfseries}
+\setbeamertemplate{itemize item}{\color{accent}\textbullet}
+\setbeamertemplate{itemize subitem}{\color{primary}\textendash}
+
+% Barra del titolo a tutta larghezza
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[wd=\paperwidth,ht=3.2ex,dp=1.4ex,leftskip=0.4cm]{frametitle}%
+    \usebeamerfont{frametitle}\insertframetitle%
+  \end{beamercolorbox}%
+}
+
+% Pie' di pagina con nome progetto e numero slide
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{\begin{beamercolorbox}[wd=\paperwidth,ht=2.6ex,dp=1.1ex,leftskip=0.4cm,rightskip=0.4cm]{footline}%
+    \small Travel Organizer Offline\hfill\insertframenumber\,/\,\inserttotalframenumber%
+  \end{beamercolorbox}}%
+}
+
+% -------- Comandi di utilita' visiva --------
+% Riga con spunta verde
+\newcommand{\ok}{\textcolor{green!55!black}{\ding{51}}~}
+
+% Mockup stilizzato di uno smartphone: {etichetta}
+\newcommand{\phone}[1]{%
+  \begin{tikzpicture}
+    \draw[rounded corners=8pt, fill=white, draw=primary!50, line width=1pt] (0,0) rectangle (2.6,5);
+    \fill[primary] (0.06,4.2) rectangle (2.54,4.94);
+    \node[white, font=\scriptsize\bfseries] at (1.3,4.57) {#1};
+    \foreach \y in {3.5,2.9,2.3,1.7,1.1} {
+      \draw[rounded corners=3pt, fill=primary!7, draw=primary!20] (0.25,\y) rectangle (2.35,\y+0.42);
+    }
+    \fill[accent] (1.9,0.35) circle (0.28);
+    \node[white, font=\scriptsize\bfseries] at (1.9,0.35) {+};
+  \end{tikzpicture}}
+
+\title{Travel Organizer Offline}
+\subtitle{Organizza i tuoi viaggi. Anche senza rete.}
+\date{Mobile Programming --- A.A. 2025/2026}
+
+\begin{document}
+
+% ---------------- Frontespizio ----------------
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[primary] (current page.north west) rectangle ([yshift=-2.2cm]current page.north east);
+    \fill[accent] ([yshift=-2.2cm]current page.north west) rectangle ([yshift=-2.35cm]current page.north east);
+  \end{tikzpicture}
+  \vspace{2.6cm}
+  \begin{center}
+    {\Huge\bfseries\color{primary} Travel Organizer Offline}\\[6pt]
+    {\large\color{soft} Organizza i tuoi viaggi. Anche senza rete.}\\[18pt]
+    {\normalsize Mobile Programming \textbullet\ A.A. 2025/2026}\\[10pt]
+    % Inserire qui i nomi dei componenti del gruppo
+    {\small\color{soft} Gruppo di progetto: [Nome Cognome] \textbullet\ [Nome Cognome] \textbullet\ [Nome Cognome]}
+  \end{center}
+\end{frame}
+}
+
+% ---------------- Il problema / la soluzione ----------------
+\begin{frame}{L'idea}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Il problema}
+        Le informazioni di un viaggio --- itinerario, prenotazioni, valigia, spese --- sono
+        \textbf{sparse} tra più app e spesso richiedono la \textbf{rete}.
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{La soluzione}
+        Un'unica app che raccoglie tutto e funziona \textbf{100\% offline}:
+        i dati sono sempre a portata di mano.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{0.7cm}
+  \begin{center}
+    \large\bfseries
+    \textcolor{primary}{Pianifica} \quad\textbullet\quad
+    \textcolor{primary}{Gestisci} \quad\textbullet\quad
+    \textcolor{primary}{Analizza}
+  \end{center}
+\end{frame}
+
+% ---------------- Funzionalità principali ----------------
+\begin{frame}{Funzionalità principali}
+  \vspace{0.2cm}
+  \begin{center}
+  \begin{tikzpicture}[
+    cardbox/.style={rounded corners=6pt, fill=primary!10, draw=primary!55,
+      line width=0.8pt, text width=1.95cm, minimum height=2.7cm,
+      align=center, inner sep=5pt, font=\small}]
+    \node[cardbox] (c1) {\textbf{\color{primary!65!black}Viaggi}\\[5pt]Mete, date, budget e stato};
+    \node[cardbox, right=6pt of c1] (c2) {\textbf{\color{primary!65!black}Tappe}\\[5pt]Giornate ordinabili};
+    \node[cardbox, right=6pt of c2] (c3) {\textbf{\color{primary!65!black}Attività}\\[5pt]Itinerario per giorno e luogo};
+    \node[cardbox, right=6pt of c3] (c4) {\textbf{\color{primary!65!black}Checklist}\\[5pt]Da fare e da portare};
+    \node[cardbox, right=6pt of c4] (c5) {\textbf{\color{primary!65!black}Spese}\\[5pt]Previste ed effettive};
+  \end{tikzpicture}
+  \end{center}
+  \vspace{0.35cm}
+  \begin{center}\small\color{soft}
+    Ogni dato si può inserire, visualizzare, modificare ed eliminare.
+  \end{center}
+\end{frame}
+
+% ---------------- Ricerca, filtri, statistiche ----------------
+\begin{frame}{Ricerca, filtri e statistiche}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Trova subito ciò che serve}
+        \begin{itemize}
+          \item Viaggi per titolo, destinazione, stato
+          \item Attività per categoria, stato, giorno
+          \item Spese per categoria e fascia di importo
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Tieni tutto sotto controllo}
+        \begin{itemize}
+          \item Viaggi per stato, attività completate
+          \item Budget vs.\ spesa effettiva
+          \item Grafico delle spese per categoria
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------- Feature avanzate ----------------
+\begin{frame}{Feature avanzate}
+  \begin{block}{1 --- Duplicazione completa del viaggio}
+    Copia un viaggio con \textbf{tappe, attività e checklist}, ricollegando
+    correttamente ogni elemento alle nuove tappe. Ripianificare un viaggio simile è
+    questione di un tocco.
+  \end{block}
+  \begin{block}{2 --- Packing list dal tipo di viaggio}
+    La valigia si genera in automatico in base al \textbf{tipo di viaggio} scelto
+    (mare, montagna, città, business, avventura, inverno): oggetti di base + specifici.
+  \end{block}
+  \begin{center}\small\color{soft}
+    In più: \textbf{timeline} cronologica di tappe e attività.
+  \end{center}
+\end{frame}
+
+% ---------------- Architettura ----------------
+\begin{frame}{Come è fatta}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{\color{primary}Architettura a livelli}
+      \vspace{4pt}
+      \begin{center}
+      \begin{tikzpicture}[node distance=4pt, every node/.style={
+          rounded corners=4pt, text width=4.6cm, align=center,
+          minimum height=0.72cm, font=\small}]
+        \node[fill=accent!18, draw=accent!60] (ui) {Schermate \textit{(features)}};
+        \node[fill=primary!16, draw=primary!55, below=of ui] (st) {Stato \textit{(Provider)}};
+        \node[fill=primary!12, draw=primary!50, below=of st] (repo) {Repository};
+        \node[fill=primary!8, draw=primary!45, below=of repo] (db) {SQLite locale \textit{(offline)}};
+        \draw[->,primary!70] (ui) -- (st);
+        \draw[->,primary!70] (st) -- (repo);
+        \draw[->,primary!70] (repo) -- (db);
+      \end{tikzpicture}
+      \end{center}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \textbf{\color{primary}Pattern mobile}
+      \begin{itemize}
+        \item Navigazione a più schermate con passaggio dati
+        \item Gestione stato con \texttt{Provider}
+        \item Persistenza locale con \texttt{sqflite}
+        \item Grafici con \texttt{fl\_chart}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------- Scelte progettuali ----------------
+\begin{frame}{Scelte progettuali}
+  \begin{itemize}
+    \item \textbf{Flutter} --- unica base di codice, UI Material 3 coerente.
+    \item \textbf{Provider} --- gestione dello stato semplice e reattiva.
+    \item \textbf{SQLite} --- dati relazionali con integrità referenziale, tutto in locale.
+    \item \textbf{Stato del viaggio calcolato} dalle date: l'elenco resta sempre coerente
+      nel tempo, senza aggiornamenti manuali.
+  \end{itemize}
+\end{frame}
+
+% ---------------- Difficoltà ----------------
+\begin{frame}{Difficoltà incontrate}
+  \begin{block}{Coerenza dei riferimenti nella duplicazione}
+    Duplicando le tappe cambiano gli identificatori: attività e checklist rischiano di
+    puntare a tappe inesistenti. \textbf{Soluzione:} una mappa
+    \textit{id originale $\rightarrow$ id copia} per ricollegare tutto correttamente.
+  \end{block}
+  \begin{block}{Integrità dei dati offline}
+    Eliminazioni a cascata e stato calcolato garantiscono dati sempre coerenti anche
+    senza rete.
+  \end{block}
+\end{frame}
+
+% ---------------- Copertura requisiti ----------------
+\begin{frame}{Copertura dei requisiti}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \ok Gestione viaggi\\[3pt]
+      \ok Tappe / giornate\\[3pt]
+      \ok Attività / itinerario\\[3pt]
+      \ok Checklist e info utili\\[3pt]
+      \ok Spese previste ed effettive
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \ok Ricerca, filtri, organizzazione\\[3pt]
+      \ok Riepiloghi e statistiche\\[3pt]
+      \ok Persistenza locale offline\\[3pt]
+      \ok Navigazione e passaggio dati\\[3pt]
+      \ok \textbf{3} feature avanzate (min.\ 2)
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------- Demo / schermate ----------------
+\begin{frame}{Demo dal vivo}
+  \begin{center}
+  \begin{tikzpicture}
+    \node (a) {\phone{I Miei Viaggi}};
+    \node (b) [right=0.7cm of a] {\phone{Dettaglio}};
+    \node (c) [right=0.7cm of b] {\phone{Statistiche}};
+  \end{tikzpicture}
+  \end{center}
+  \vspace{0.2cm}
+  \begin{center}\small\color{soft}
+    % Suggerimento: qui si possono inserire screenshot reali dell'app.
+    Percorso della demo: elenco viaggi $\rightarrow$ dettaglio (tappe, attività, valigia)
+    $\rightarrow$ duplica viaggio $\rightarrow$ statistiche.
+  \end{center}
+\end{frame}
+
+% ---------------- Chiusura ----------------
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+  \vspace{1.4cm}
+  \begin{center}
+    {\Huge\bfseries\color{primary} Grazie}\\[10pt]
+    {\large\color{soft} Travel Organizer Offline}\\[16pt]
+    {\small Codice sorgente:}\\
+    {\small\color{primary}\texttt{github.com/acrisci05/TravelOrganizerOffline}}
+  \end{center}
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[accent] ([yshift=1.9cm]current page.south west) rectangle ([yshift=2.05cm]current page.south east);
+    \fill[primary] ([yshift=0cm]current page.south west) rectangle ([yshift=1.9cm]current page.south east);
+    \node[white] at ([yshift=0.95cm]current page.south) {\small Pianifica \textbullet\ Gestisci \textbullet\ Analizza};
+  \end{tikzpicture}
+\end{frame}
+}
+
+\end{document}

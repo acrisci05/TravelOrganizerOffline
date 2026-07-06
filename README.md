@@ -92,5 +92,7 @@ lib/
 
 ## Documentazione
 
-La relazione tecnica completa è disponibile nella cartella [`docs/`](docs/) in formato
-LaTeX (`relazione.tex`).
+Nella cartella [`docs/`](docs/) sono disponibili, in formato LaTeX con relativo PDF:
+
+- `relazione.tex` / `relazione.pdf` — relazione tecnica di progettazione e sviluppo;
+- `presentazione.tex` / `presentazione.pdf` — slide di presentazione dell'app.
