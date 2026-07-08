@@ -13,6 +13,9 @@ import '../../providers/activity_provider.dart';
 import '../../providers/checklist_provider.dart';
 import 'trip_detail_screen.dart';
 
+// Modalità di duplicazione di un viaggio: copia completa oppure sole tappe.
+enum _DuplicateMode { full, stagesOnly }
+
 class TripsListScreen extends StatefulWidget {
   const TripsListScreen({super.key});
 
@@ -253,7 +256,7 @@ class _TripCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  StatusChip.trip(trip.status),
+                  StatusChip.trip(status),
                 ],
               ),
               const SizedBox(height: 6),
@@ -333,6 +336,20 @@ class _TripCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   _actionBtn(
                     context,
+                    trip.status == TripStatus.archived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                    trip.status == TripStatus.archived
+                        ? 'Ripristina'
+                        : 'Archivia',
+                    () => _toggleArchive(context),
+                    color: trip.status == TripStatus.archived
+                        ? AppColors.accent
+                        : AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  _actionBtn(
+                    context,
                     Icons.edit_outlined,
                     'Modifica',
                     () => _edit(context),
@@ -385,12 +402,22 @@ class _TripCard extends StatelessWidget {
     }
   }
 
-  // Duplicazione completa del viaggio (feature avanzata): oltre al viaggio
-  // vengono copiate anche tappe, attività e checklist. L'ordine delle chiamate
-  // è importante perché la mappa degli id delle tappe, restituita dalla
-  // duplicazione delle tappe, serve a ricollegare correttamente attività e
-  // checklist alle nuove tappe.
+  // Duplicazione del viaggio (feature avanzata). L'utente sceglie la modalità
+  // di copia: completa (tappe, attività e checklist) oppure delle sole tappe,
+  // utile per riutilizzare l'itinerario ripartendo con attività e checklist
+  // vuote. Le tappe vengono comunque sempre duplicate: la mappa degli id da
+  // esse restituita serve a ricollegare correttamente attività e checklist
+  // alle nuove tappe quando si duplica anche il resto.
   Future<void> _duplicate(BuildContext context) async {
+    final mode = await showModalBottomSheet<_DuplicateMode>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _DuplicateModeSheet(),
+    );
+    if (mode == null || !context.mounted) return;
+
     final tripProvider = context.read<TripProvider>();
     final stageProvider = context.read<StageProvider>();
     final activityProvider = context.read<ActivityProvider>();
@@ -400,14 +427,33 @@ class _TripCard extends StatelessWidget {
     final newTrip = await tripProvider.duplicateTrip(trip);
     final stageIdMap =
         await stageProvider.duplicateStagesForTrip(trip.id, newTrip.id);
-    await activityProvider.duplicateActivitiesForTrip(
-        trip.id, newTrip.id, stageIdMap);
-    await checklistProvider.duplicateChecklistsForTrip(
-        trip.id, newTrip.id, stageIdMap);
+    if (mode == _DuplicateMode.full) {
+      await activityProvider.duplicateActivitiesForTrip(
+          trip.id, newTrip.id, stageIdMap);
+      await checklistProvider.duplicateChecklistsForTrip(
+          trip.id, newTrip.id, stageIdMap);
+    }
 
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Viaggio duplicato con tappe, attività e checklist'),
+      SnackBar(
+        content: Text(mode == _DuplicateMode.full
+            ? 'Viaggio duplicato con tappe, attività e checklist'
+            : 'Viaggio duplicato con le sole tappe'),
+      ),
+    );
+  }
+
+  // Archivia il viaggio o lo ripristina se già archiviato. Una volta
+  // archiviato, lo stato resta "archiviato" a prescindere dalle date finché
+  // non si preme di nuovo il pulsante.
+  Future<void> _toggleArchive(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final wasArchived = trip.status == TripStatus.archived;
+    await context.read<TripProvider>().toggleArchive(trip);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+            wasArchived ? 'Viaggio ripristinato' : 'Viaggio archiviato'),
       ),
     );
   }
@@ -428,5 +474,48 @@ class _TripCard extends StatelessWidget {
     if (confirmed && context.mounted) {
       await context.read<TripProvider>().deleteTrip(trip.id);
     }
+  }
+}
+
+// Menu inferiore per scegliere come duplicare il viaggio. Restituisce, tramite
+// Navigator.pop, la modalità selezionata (oppure null se l'utente annulla).
+class _DuplicateModeSheet extends StatelessWidget {
+  const _DuplicateModeSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Come vuoi duplicare il viaggio?',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.copy_all_outlined,
+                  color: AppColors.primary),
+              title: const Text('Copia completa'),
+              subtitle: const Text('Tappe, attività e checklist'),
+              onTap: () => Navigator.of(context).pop(_DuplicateMode.full),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.route_outlined,
+                  color: AppColors.primary),
+              title: const Text('Solo le tappe'),
+              subtitle: const Text('Copia il solo itinerario delle tappe'),
+              onTap: () =>
+                  Navigator.of(context).pop(_DuplicateMode.stagesOnly),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
