@@ -58,6 +58,36 @@ void main() {
     });
   });
 
+  group('Archiviazione manuale del viaggio', () {
+    final oggi = DateTime.now();
+
+    Trip futureTrip() => Trip(
+          id: 'a',
+          title: 'Test',
+          destination: 'Roma',
+          startDate: oggi.add(const Duration(days: 10)),
+          endDate: oggi.add(const Duration(days: 15)),
+        );
+
+    test('dateStatus ignora lo stato archiviato e usa solo le date', () {
+      final trip = futureTrip().copyWith(status: TripStatus.archived);
+      // computedStatus resta archiviato, ma dateStatus riflette le date.
+      expect(trip.computedStatus, TripStatus.archived);
+      expect(trip.dateStatus, TripStatus.future);
+    });
+
+    test('archiviare e poi ripristinare riporta allo stato per data', () {
+      final trip = futureTrip();
+      // Archiviazione: lo stato diventa archiviato.
+      final archiviato = trip.copyWith(status: TripStatus.archived);
+      expect(archiviato.computedStatus, TripStatus.archived);
+      // Ripristino: si riparte dallo stato calcolato dalle date.
+      final ripristinato =
+          archiviato.copyWith(status: archiviato.dateStatus);
+      expect(ripristinato.computedStatus, TripStatus.future);
+    });
+  });
+
   test('durationDays include entrambi gli estremi', () {
     final trip = Trip(
       id: '5',

@@ -132,6 +132,17 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Archivia o ripristina un viaggio. L'archiviazione forza lo stato ad
+  // "archiviato" e questo resta invariato indipendentemente dalle date finché
+  // non si preme di nuovo il pulsante. Il ripristino riporta il viaggio allo
+  // stato coerente con le sue date (futuro / in corso / completato).
+  Future<void> toggleArchive(Trip trip) async {
+    final updated = trip.status == TripStatus.archived
+        ? trip.copyWith(status: trip.dateStatus)
+        : trip.copyWith(status: TripStatus.archived);
+    await updateTrip(updated);
+  }
+
   // Duplica il solo record del viaggio (senza tappe/attività/checklist).
   // La copia parte sempre come viaggio "futuro". La duplicazione dei dati
   // collegati è orchestrata dai rispettivi provider a partire dal nuovo id.
