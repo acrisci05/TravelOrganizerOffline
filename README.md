@@ -17,7 +17,9 @@ seguendo la traccia *"Travel Organizer Offline App"* (traccia progettuale n. 1).
 
 - **Gestione dei viaggi**: creazione, modifica, eliminazione e consultazione del
   dettaglio di ogni viaggio (titolo, destinazione, date, budget, partecipanti, note,
-  stato calcolato automaticamente: futuro, in corso, completato, archiviato).
+  stato calcolato automaticamente: futuro, in corso, completato). Ogni viaggio può essere
+  **archiviato/ripristinato** con un pulsante dedicato: una volta archiviato resta tale a
+  prescindere dalle date, finché non viene ripristinato.
 - **Tappe / giornate**: organizzazione del viaggio in tappe ordinabili (drag & drop),
   ciascuna con data, località, descrizione e note.
 - **Attività / itinerario**: pianificazione delle attività (visite, escursioni, pasti,
@@ -34,8 +36,10 @@ seguendo la traccia *"Travel Organizer Offline App"* (traccia progettuale n. 1).
 
 ## Feature avanzate
 
-1. **Duplicazione completa del viaggio**: copia un viaggio con tutte le sue tappe,
-   attività e checklist (con rimappatura corretta delle associazioni tappa↔attività).
+1. **Duplicazione del viaggio**: copia un viaggio in due modalità scelte dall'utente —
+   *completa* (tappe, attività e checklist, con rimappatura corretta delle associazioni
+   tappa↔attività) oppure *solo le tappe*, per riutilizzare l'itinerario ripartendo con
+   attività e checklist vuote.
 2. **Packing list per tipo di viaggio**: generazione automatica della lista valigia in
    base al tipo di viaggio scelto dall'utente (mare, montagna, città, business,
    avventura, inverno).

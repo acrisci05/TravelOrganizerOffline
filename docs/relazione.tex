@@ -86,7 +86,13 @@
 % ---------------------------------------------------------------
 \begin{titlepage}
     \centering
-    \vspace*{2.5cm}
+    \vspace*{1cm}
+
+    \includegraphics[width=3.2cm]{img/unisa.jpg}\\[0.4cm]
+    {\Large\textbf{Università degli Studi di Salerno}\par}
+    {\large Corso di Mobile Programming\par}
+
+    \vspace{1.8cm}
 
     {\Huge \textbf{Relazione Tecnica di Progettazione e Sviluppo}}\\[0.6cm]
     {\Huge \textbf{Travel Organizer Offline}\par}
@@ -195,8 +201,10 @@ in ogni momento.
 \begin{itemize}[nosep]
     \item \textbf{IF-1 Viaggi:} visualizzare l'elenco, consultare il dettaglio, inserire,
     modificare ed eliminare un viaggio. Lo stato (futuro, in corso, completato,
-    archiviato) è calcolato automaticamente dalle date, con possibilità di archiviazione
-    manuale.
+    archiviato) è calcolato automaticamente dalle date; l'utente può inoltre archiviare o
+    ripristinare un viaggio tramite un pulsante dedicato nella lista (accanto a duplica,
+    modifica ed elimina). Un viaggio archiviato resta tale a prescindere dalle date finché
+    non viene ripristinato.
     \item \textbf{IF-2 Tappe:} visualizzare, aggiungere, modificare, rimuovere e riordinare
     (drag \& drop) le tappe; consultare le attività associate a ciascuna tappa.
     \item \textbf{IF-3 Attività:} inserire, modificare, eliminare e cambiare stato (da fare,
@@ -239,9 +247,11 @@ persistenza locale.
 \label{sec:advanced}
 Sono state realizzate e integrate nell'app le seguenti feature avanzate:
 \begin{enumerate}[nosep]
-    \item \textbf{Duplicazione completa del viaggio}: la copia di un viaggio include tappe,
-    attività e checklist, con corretta rimappatura delle associazioni tappa--attività e
-    tappa--checklist.
+    \item \textbf{Duplicazione del viaggio}: la copia può avvenire in due modalità
+    selezionabili dall'utente. La \emph{copia completa} include tappe, attività e checklist,
+    con corretta rimappatura delle associazioni tappa--attività e tappa--checklist; la
+    \emph{copia delle sole tappe} duplica il solo itinerario, così da riutilizzarlo
+    ripartendo con attività e checklist vuote.
     \item \textbf{Packing list generata dal tipo di viaggio}: la lista valigia viene
     generata automaticamente in base al tipo di viaggio scelto dall'utente (mare,
     montagna, città, business, avventura, inverno), combinando oggetti di base e oggetti
@@ -304,11 +314,12 @@ Sono state realizzate e integrate nell'app le seguenti feature avanzate:
         \toprule
         \textbf{ID} & \textbf{Nome} & \textbf{ID} & \textbf{Nome} \\
         \midrule
-        UC-1 & Inserisci viaggio        & UC-6 & Registra spesa \\
-        UC-2 & Consulta dettaglio viaggio & UC-7 & Cerca e filtra elementi \\
-        UC-3 & Inserisci tappa          & UC-8 & Visualizza statistiche \\
-        UC-4 & Inserisci attività       & UC-9 & Duplica viaggio \\
-        UC-5 & Genera lista valigia     & UC-10 & Modifica o elimina elemento \\
+        UC-1 & Inserisci viaggio        & UC-7 & Cerca e filtra elementi \\
+        UC-2 & Consulta dettaglio viaggio & UC-8 & Visualizza statistiche \\
+        UC-3 & Inserisci tappa          & UC-9 & Duplica viaggio \\
+        UC-4 & Inserisci attività       & UC-10 & Modifica o elimina elemento \\
+        UC-5 & Genera lista valigia     & UC-11 & Archivia o ripristina viaggio \\
+        UC-6 & Registra spesa           &      & \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -363,16 +374,35 @@ l'errore e richiede una nuova selezione di data/ora.
 \subsubsection*{UC-9: Duplica viaggio (feature avanzata)}
 \textbf{Attore:} Utente.\\
 \textbf{Precondizioni:} esiste il viaggio da duplicare.\\
-\textbf{Postcondizioni:} viene creato un nuovo viaggio ``(copia)'' con tappe, attività e
-checklist duplicate.\\
+\textbf{Postcondizioni:} viene creato un nuovo viaggio ``(copia)'' con le tappe duplicate e,
+nella modalità completa, anche attività e checklist.\\
 \textbf{Flusso base:}
 \begin{enumerate}[nosep]
     \item L'utente seleziona ``Duplica'' su un viaggio.
+    \item Il sistema mostra un menu con le due modalità: \emph{copia completa} o
+    \emph{copia delle sole tappe}.
+    \item L'utente sceglie la modalità.
     \item Il sistema crea il nuovo viaggio (stato ``futuro'').
     \item Il sistema duplica le tappe generando una mappa id originale$\rightarrow$id copia.
-    \item Il sistema duplica attività e checklist ricollegandole alle nuove tappe tramite
-    la mappa.
+    \item Solo in modalità completa, il sistema duplica attività e checklist ricollegandole
+    alle nuove tappe tramite la mappa.
     \item Il sistema conferma l'operazione con una \texttt{SnackBar}.
+\end{enumerate}
+\textbf{Flusso alternativo (2a) --- annullamento:} se l'utente chiude il menu senza
+scegliere, l'operazione viene annullata e nessun viaggio viene creato.
+
+\subsubsection*{UC-11: Archivia o ripristina viaggio}
+\textbf{Attore:} Utente.\\
+\textbf{Precondizioni:} esiste il viaggio.\\
+\textbf{Postcondizioni:} lo stato del viaggio passa ad ``archiviato'' o torna allo stato
+calcolato dalle date.\\
+\textbf{Flusso base:}
+\begin{enumerate}[nosep]
+    \item L'utente seleziona il pulsante ``Archivia'' su un viaggio non archiviato.
+    \item Il sistema imposta lo stato ad ``archiviato'' e lo mantiene tale a prescindere
+    dalle date.
+    \item Premendo di nuovo il pulsante (``Ripristina''), il sistema riporta il viaggio
+    allo stato calcolato dalle date (futuro / in corso / completato).
 \end{enumerate}
 
 \subsubsection*{UC-10: Modifica o elimina elemento}
@@ -408,7 +438,7 @@ lib/
 \subsection{Schermate principali}
 \begin{itemize}[nosep]
     \item \textbf{Lista viaggi}: elenco ordinato per stato, ricerca, filtri, vista
-    archiviati e azioni rapide (duplica, modifica, elimina).
+    archiviati e azioni rapide (duplica, archivia/ripristina, modifica, elimina).
     \item \textbf{Dettaglio viaggio}: intestazione con dati principali e sei schede
     (Tappe, Attività, Checklist, Spese, Timeline, Valigia).
     \item \textbf{Form di inserimento/modifica}: viaggio, tappa, attività e spesa.
@@ -529,12 +559,15 @@ incoerenti.
 
 \subsection{Parti significative}
 
-\subsubsection*{Duplicazione completa del viaggio}
-La difficoltà principale è mantenere coerenti i riferimenti tra le entità: duplicando le
-tappe si generano nuovi identificatori, quindi attività e checklist non possono conservare
-i vecchi \texttt{stageId}. La soluzione adottata fa restituire alla duplicazione delle
-tappe una mappa \emph{id originale $\rightarrow$ id copia}, usata poi per ricollegare
-correttamente attività e checklist alle nuove tappe.
+\subsubsection*{Duplicazione del viaggio}
+La duplicazione è offerta in due modalità: \emph{copia completa} e \emph{copia delle sole
+tappe}. In entrambe le tappe vengono sempre duplicate; nella copia completa si duplicano
+anche attività e checklist, mentre nella copia delle sole tappe questi passaggi vengono
+semplicemente omessi. La difficoltà principale della copia completa è mantenere coerenti i
+riferimenti tra le entità: duplicando le tappe si generano nuovi identificatori, quindi
+attività e checklist non possono conservare i vecchi \texttt{stageId}. La soluzione adottata
+fa restituire alla duplicazione delle tappe una mappa \emph{id originale $\rightarrow$ id
+copia}, usata poi per ricollegare correttamente attività e checklist alle nuove tappe.
 
 \begin{lstlisting}[caption={StageProvider: duplicazione delle tappe con mappa degli id}]
 Future<Map<String, String>> duplicateStagesForTrip(
@@ -599,9 +632,9 @@ aggiornamenti espliciti.
 L'applicazione realizza in modo coerente e integrato tutte le funzionalità richieste
 dalla traccia, con particolare attenzione all'usabilità (empty state, validazione,
 conferme) e alla coerenza dei dati (integrità referenziale, stato calcolato,
-duplicazione con rimappatura). Le due feature avanzate --- duplicazione completa del
-viaggio e packing list generata dal tipo di viaggio --- sono pienamente integrate nel
-flusso applicativo. Possibili sviluppi futuri includono l'introduzione di notifiche
+duplicazione con rimappatura). Le due feature avanzate --- duplicazione del viaggio
+(completa o delle sole tappe) e packing list generata dal tipo di viaggio --- sono
+pienamente integrate nel flusso applicativo. Possibili sviluppi futuri includono l'introduzione di notifiche
 locali, l'esportazione/importazione dei dati per il backup e la suddivisione delle spese
 tra i partecipanti.
 
