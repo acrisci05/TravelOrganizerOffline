@@ -247,15 +247,8 @@ persistenza locale.
 \label{sec:advanced}
 Sono state realizzate e integrate nell'app le seguenti feature avanzate:
 \begin{enumerate}[nosep]
-    \item \textbf{Duplicazione del viaggio}: la copia può avvenire in due modalità
-    selezionabili dall'utente. La \emph{copia completa} include tappe, attività e checklist,
-    con corretta rimappatura delle associazioni tappa--attività e tappa--checklist; la
-    \emph{copia delle sole tappe} duplica il solo itinerario, così da riutilizzarlo
-    ripartendo con attività e checklist vuote.
-    \item \textbf{Packing list generata dal tipo di viaggio}: la lista valigia viene
-    generata automaticamente in base al tipo di viaggio scelto dall'utente (mare,
-    montagna, città, business, avventura, inverno), combinando oggetti di base e oggetti
-    specifici del tipo.
+    \item \textbf{Duplicazione del viaggio}: la copia avviene cliccando sull'icona di duplicazione. Vegnono duplicate tutte le informazioni contenute dal viaggio base e vengono rimappate tutte le relazioni tra gli elementi contenuti nel viaggio.
+    \item \textbf{Duplicazione delle checklist}: la copia avviene cliccando sull'icona della duplicazione. Viene creata una copia della checklist che differisce da quella originale solamente dal titolo che è così composto: \textit{nome originale (Copia)}. Vengono anche copiati gli stati degli elementi della checklist.
     \item \textbf{Timeline giornaliera dell'itinerario}: vista cronologica che aggrega
     tappe e attività ordinate per data (feature aggiuntiva).
 \end{enumerate}
@@ -264,10 +257,6 @@ Sono state realizzate e integrate nell'app le seguenti feature avanzate:
 \begin{itemize}[nosep]
     \item I dati risiedono unicamente sul dispositivo: la disinstallazione dell'app o la
     cancellazione dei dati applicativi comporta la perdita delle informazioni.
-    \item Le spese non ereditano automaticamente il costo previsto delle attività: si
-    tratta di due grandezze distinte (stima dell'attività vs. spesa registrata).
-    \item La duplicazione non copia le spese: il viaggio duplicato parte con un registro
-    spese vuoto, coerentemente con una nuova pianificazione.
 \end{itemize}
 
 % ===============================================================
@@ -429,7 +418,6 @@ lib/
     models/        modelli di dominio
     database/      DatabaseHelper (SQLite: schema, indici)
     repositories/  accesso ai dati (una repository per entità)
-    seed/          dati demo iniziali
   providers/   gestione dello stato (ChangeNotifier)
   features/    schermate per funzionalità
   shared/      widget riutilizzabili
@@ -519,8 +507,8 @@ persistenza relazionale in Flutter e soddisfa il requisito di funzionamento offl
 tramite un database SQLite locale, senza alcun servizio di rete.
 
 \subsection{Gestione della persistenza}
-Lo schema del database è creato alla prima apertura da \texttt{DatabaseHelper} (pattern
-singleton), con tabelle, vincoli di integrità referenziale e indici sulle foreign key per
+Lo schema del database è creato alla prima apertura da \texttt{DatabaseHelper} 
+, con tabelle, vincoli di integrità referenziale e indici sulle foreign key per
 efficienza. L'accesso ai dati è mediato dalle repository, che espongono operazioni CRUD e
 query di ricerca/filtro. Al primo avvio, se il database è vuoto, viene caricato un
 insieme di dati demo.
@@ -556,75 +544,6 @@ Le repository incapsulano le query SQL. Ad esempio, l'eliminazione di un viaggio
 l'integrità referenziale a cascata del database per rimuovere automaticamente tappe,
 attività, checklist e spese collegate, evitando cancellazioni manuali e stati
 incoerenti.
-
-\subsection{Parti significative}
-
-\subsubsection*{Duplicazione del viaggio}
-La duplicazione è offerta in due modalità: \emph{copia completa} e \emph{copia delle sole
-tappe}. In entrambe le tappe vengono sempre duplicate; nella copia completa si duplicano
-anche attività e checklist, mentre nella copia delle sole tappe questi passaggi vengono
-semplicemente omessi. La difficoltà principale della copia completa è mantenere coerenti i
-riferimenti tra le entità: duplicando le tappe si generano nuovi identificatori, quindi
-attività e checklist non possono conservare i vecchi \texttt{stageId}. La soluzione adottata
-fa restituire alla duplicazione delle tappe una mappa \emph{id originale $\rightarrow$ id
-copia}, usata poi per ricollegare correttamente attività e checklist alle nuove tappe.
-
-\begin{lstlisting}[caption={StageProvider: duplicazione delle tappe con mappa degli id}]
-Future<Map<String, String>> duplicateStagesForTrip(
-    String sourceTripId, String newTripId) async {
-  final stages = await _repo.getByTrip(sourceTripId);
-  final idMap = <String, String>{};
-  for (final s in stages) {
-    final newId = _uuid.v4();
-    idMap[s.id] = newId; // mappa vecchio id -> nuovo id
-    await _repo.insert(Stage(
-      id: newId, tripId: newTripId, title: s.title, date: s.date,
-      location: s.location, description: s.description,
-      order: s.order, notes: s.notes,
-    ));
-  }
-  await loadForTrip(newTripId);
-  return idMap;
-}
-\end{lstlisting}
-
-\begin{lstlisting}[caption={ActivityProvider: rimappatura della tappa associata}]
-Future<void> duplicateActivitiesForTrip(
-    String sourceTripId, String newTripId,
-    Map<String, String> stageIdMap) async {
-  final activities = await _repo.getByTrip(sourceTripId);
-  for (final a in activities) {
-    await _repo.insert(Activity(
-      id: _uuid.v4(), tripId: newTripId,
-      stageId: a.stageId == null ? null : stageIdMap[a.stageId],
-      title: a.title, category: a.category, dateTime: a.dateTime,
-      location: a.location, estimatedCost: a.estimatedCost,
-      status: ActivityStatus.todo, notes: a.notes,
-    ));
-  }
-  await loadForTrip(newTripId);
-}
-\end{lstlisting}
-
-\subsubsection*{Packing list dal tipo di viaggio}
-La generazione della lista valigia è modellata da un'enumerazione \texttt{TripType} con
-un'estensione che espone gli oggetti specifici e un metodo che li combina con quelli di
-base. Alla richiesta di generazione, un menu inferiore fa scegliere il tipo e gli oggetti
-vengono aggiunti alla checklist evitando i duplicati.
-
-\begin{lstlisting}[caption={TripType: costruzione della lista in base al tipo}]
-extension TripTypeExtension on TripType {
-  List<String> get specificItems { /* oggetti per tipo */ }
-  List<String> buildPackingList() =>
-      [...PackingTemplate.baseItems, ...specificItems];
-}
-\end{lstlisting}
-
-\subsubsection*{Stato del viaggio calcolato}
-Lo stato mostrato all'utente non è un dato statico ma è calcolato dalle date rispetto al
-giorno corrente (futuro / in corso / completato), salvo lo stato ``archiviato'' impostato
-manualmente. Questo garantisce che l'elenco resti sempre coerente nel tempo senza
-aggiornamenti espliciti.
 
 % ===============================================================
 \section{Conclusioni}
