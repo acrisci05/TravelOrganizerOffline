@@ -2,10 +2,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-// Gestore singleton del database SQLite locale: si occupa dell'apertura del
-// database, della creazione dello schema (tabelle, vincoli e indici) e
-// dell'abilitazione delle foreign key. Su Web usa l'implementazione basata
-// su WebAssembly. Tutta la persistenza dell'app è locale e offline.
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;

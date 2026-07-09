@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/expense.dart';
 
-// Repository di accesso ai dati delle spese (tabella "expenses").
 class ExpenseRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 

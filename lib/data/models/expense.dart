@@ -1,13 +1,5 @@
-// Modello di dominio della spesa (prevista o effettiva) di un viaggio,
-// eventualmente collegata a una tappa o a un'attività.
-
-/// Categoria merceologica della spesa.
 enum ExpenseCategory { transport, accommodation, food, activity, shopping, health, other }
-
-/// Distingue tra spese pianificate (previste) e spese realmente sostenute.
 enum ExpenseStatus { planned, actual }
-
-/// Metodo di pagamento utilizzato per la spesa.
 enum PaymentMethod { cash, card, transfer, other }
 
 extension ExpenseCategoryExtension on ExpenseCategory {

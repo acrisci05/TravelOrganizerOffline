@@ -3,22 +3,16 @@ import 'package:uuid/uuid.dart';
 import '../data/models/expense.dart';
 import '../data/repositories/expense_repository.dart';
 
-// Provider che gestisce lo stato delle spese, indicizzate per viaggio.
-// Espone i totali (previsti/effettivi) e la ripartizione per categoria usati
-// nelle statistiche e nel confronto con il budget.
 class ExpenseProvider extends ChangeNotifier {
   final ExpenseRepository _repo = ExpenseRepository();
   final _uuid = const Uuid();
 
-  // Cache in memoria: idViaggio -> elenco spese del viaggio.
   final Map<String, List<Expense>> _expensesByTrip = {};
 
   List<Expense> getByTrip(String tripId) => _expensesByTrip[tripId] ?? [];
 
   List<Expense> getByStatus(String tripId, ExpenseStatus status) =>
-      (_expensesByTrip[tripId] ?? [])
-          .where((e) => e.status == status)
-          .toList();
+      (_expensesByTrip[tripId] ?? []).where((e) => e.status == status).toList();
 
   List<Expense> getByCategory(String tripId, ExpenseCategory category) =>
       (_expensesByTrip[tripId] ?? [])
@@ -79,13 +73,49 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  double totalActual(String tripId) =>
-      getByStatus(tripId, ExpenseStatus.actual)
-          .fold(0.0, (sum, e) => sum + e.amount);
+  Future<void> duplicateExpensesForTrip(
+    String sourceTripId,
+    String newTripId,
+  ) async {
+    if (!_expensesByTrip.containsKey(sourceTripId)) {
+      await loadForTrip(sourceTripId);
+    }
 
-  double totalPlanned(String tripId) =>
-      getByStatus(tripId, ExpenseStatus.planned)
-          .fold(0.0, (sum, e) => sum + e.amount);
+    final sourceList = List<Expense>.from(_expensesByTrip[sourceTripId] ?? []);
+    final newList = _expensesByTrip[newTripId] ?? <Expense>[];
+
+    for (final expense in sourceList) {
+      final copy = Expense(
+        id: _uuid.v4(),
+        tripId: newTripId,
+        stageId: null,
+        activityId: null,
+        title: expense.title,
+        amount: expense.amount,
+        category: expense.category,
+        date: expense.date,
+        paymentMethod: expense.paymentMethod,
+        status: expense.status,
+        notes: expense.notes,
+      );
+
+      await _repo.insert(copy);
+      newList.add(copy);
+    }
+
+    _expensesByTrip[newTripId] = newList;
+    notifyListeners();
+  }
+
+  double totalActual(String tripId) => getByStatus(
+    tripId,
+    ExpenseStatus.actual,
+  ).fold(0.0, (sum, e) => sum + e.amount);
+
+  double totalPlanned(String tripId) => getByStatus(
+    tripId,
+    ExpenseStatus.planned,
+  ).fold(0.0, (sum, e) => sum + e.amount);
 
   Map<ExpenseCategory, double> categoryTotals(String tripId) {
     final result = <ExpenseCategory, double>{};

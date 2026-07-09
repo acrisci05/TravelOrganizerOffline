@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Dialog di conferma riutilizzabile, usato soprattutto prima delle azioni
-// distruttive (es. eliminazioni). Il metodo statico show() restituisce true
-// se l'utente conferma, false altrimenti.
 class ConfirmDialog extends StatelessWidget {
   final String title;
   final String message;

@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite/sqflite.dart';
 import 'core/theme/app_theme.dart';
-import 'data/repositories/trip_repository.dart';
-import 'data/seed/seed_data.dart';
 import 'providers/trip_provider.dart';
 import 'providers/stage_provider.dart';
 import 'providers/activity_provider.dart';
@@ -15,17 +13,11 @@ import 'providers/expense_provider.dart';
 import 'features/trips/trips_list_screen.dart';
 import 'features/stats/stats_screen.dart';
 
-// Punto di ingresso dell'applicazione. Inizializza la persistenza locale e la
-// localizzazione italiana, popola il database con dati demo al primo avvio e
-// avvia l'app registrando i provider di stato.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Inizializza SQLite via WebAssembly quando si gira sul web
   if (kIsWeb) databaseFactory = databaseFactoryFfiWeb;
   await initializeDateFormatting('it_IT', null);
-  // Popola con dati demo se il DB è ancora vuoto
-  final existing = await TripRepository().getAll();
-  if (existing.isEmpty) await SeedData.populate();
   runApp(const TravelOrganizerApp());
 }
 

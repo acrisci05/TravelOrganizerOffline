@@ -56,7 +56,8 @@ class _StatsBodyState extends State<_StatsBody> {
   @override
   Widget build(BuildContext context) {
     final tripProvider = context.watch<TripProvider>();
-    final trips = tripProvider.trips;
+    final trips = tripProvider.trips
+    .where((t) => t.status != TripStatus.archived).toList();
 
     if (trips.isEmpty) {
       return const Center(
@@ -82,7 +83,7 @@ class _StatsBodyState extends State<_StatsBody> {
     final clProvider = context.watch<ChecklistProvider>();
     final stageProvider = context.watch<StageProvider>();
 
-    // Totali globali su tutti i viaggi
+    // Global totals
     final totalActivities =
         trips.fold(0, (sum, t) => sum + actProvider.totalCount(t.id));
     final completedActivities =
@@ -99,7 +100,7 @@ class _StatsBodyState extends State<_StatsBody> {
     final completedCheckItems =
         allChecklists.fold(0, (sum, c) => sum + c.completedItems);
 
-    // Tappe con più attività pianificate (prime 5)
+    // Stages with most activities (top 5)
     final allStages =
         trips.expand((t) => stageProvider.getByTrip(t.id)).toList();
     final stagesRanked = allStages
@@ -299,7 +300,12 @@ class _TripStatCard extends StatelessWidget {
         checklists.fold(0, (sum, c) => sum + c.totalItems);
     final completedItems =
         checklists.fold(0, (sum, c) => sum + c.completedItems);
-    final categoryTotals = expProvider.categoryTotals(trip.id);
+    final actualExpenses = expProvider.getByStatus(trip.id, ExpenseStatus.actual);
+
+    final Map<ExpenseCategory, double> categoryTotals = {};
+    for(final e in actualExpenses){
+      categoryTotals[e.category] = (categoryTotals[e.category] ?? 0)+e.amount;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

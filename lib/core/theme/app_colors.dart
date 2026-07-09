@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Palette centralizzata dei colori dell'applicazione: colori primari, di
-// sfondo, del testo e colori semantici (successo, avviso, errore, stati).
 class AppColors {
   static const primary = Color(0xFF1565C0);
   static const primaryDark = Color(0xFF003c8f);
@@ -22,9 +20,9 @@ class AppColors {
   static const error = Color(0xFFE53935);
   static const info = Color(0xFF1E88E5);
 
-  static const statusFuture = Color(0xFF1E88E5);
-  static const statusOngoing = Color(0xFF43A047);
-  static const statusCompleted = Color(0xFF5A5A5A);
+  static const statusFuture = Color.fromARGB(255, 0, 0, 255);
+  static const statusOngoing = Color.fromARGB(255, 255, 165, 0);
+  static const statusCompleted = Color.fromARGB(255, 0, 255, 0);
   static const statusArchived = Color(0xFFBDBDBD);
 
   static Color forTripStatus(String status) {

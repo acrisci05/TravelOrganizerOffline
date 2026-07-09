@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/activity.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/trip_provider.dart';
+import '../../providers/activity_provider.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/confirm_dialog.dart';
@@ -30,8 +32,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       builder: (context, provider, _) {
         var expenses = provider.getByTrip(widget.tripId);
         if (_filterStatus != null) {
-          expenses =
-              expenses.where((e) => e.status == _filterStatus).toList();
+          expenses = expenses.where((e) => e.status == _filterStatus).toList();
         }
         if (_filterCategory != null) {
           expenses = expenses
@@ -39,18 +40,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               .toList();
         }
         if (_minAmount != null) {
-          expenses =
-              expenses.where((e) => e.amount >= _minAmount!).toList();
+          expenses = expenses.where((e) => e.amount >= _minAmount!).toList();
         }
         if (_maxAmount != null) {
-          expenses =
-              expenses.where((e) => e.amount <= _maxAmount!).toList();
+          expenses = expenses.where((e) => e.amount <= _maxAmount!).toList();
         }
 
         final totalActual = provider.totalActual(widget.tripId);
         final totalPlanned = provider.totalPlanned(widget.tripId);
-        final trip =
-            context.read<TripProvider>().getById(widget.tripId);
+        final trip = context.read<TripProvider>().getById(widget.tripId);
         final budget = trip?.budget;
 
         return Scaffold(
@@ -67,10 +65,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 selectedCategory: _filterCategory,
                 minAmount: _minAmount,
                 maxAmount: _maxAmount,
-                onStatusChanged: (s) =>
-                    setState(() => _filterStatus = s),
-                onCategoryChanged: (c) =>
-                    setState(() => _filterCategory = c),
+                onStatusChanged: (s) => setState(() => _filterStatus = s),
+                onCategoryChanged: (c) => setState(() => _filterCategory = c),
                 onAmountFilter: () => _showAmountDialog(context),
                 onClearAmount: () => setState(() {
                   _minAmount = null;
@@ -84,18 +80,20 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         title: 'Nessuna spesa',
                         subtitle:
                             _filterStatus != null ||
-                                    _filterCategory != null ||
-                                    _minAmount != null ||
-                                    _maxAmount != null
-                                ? 'Nessuna spesa corrisponde ai filtri'
-                                : 'Traccia le spese del viaggio',
-                        actionLabel: _filterStatus == null &&
+                                _filterCategory != null ||
+                                _minAmount != null ||
+                                _maxAmount != null
+                            ? 'Nessuna spesa corrisponde ai filtri'
+                            : 'Traccia le spese del viaggio',
+                        actionLabel:
+                            _filterStatus == null &&
                                 _filterCategory == null &&
                                 _minAmount == null &&
                                 _maxAmount == null
                             ? 'Aggiungi spesa'
                             : null,
-                        onAction: _filterStatus == null &&
+                        onAction:
+                            _filterStatus == null &&
                                 _filterCategory == null &&
                                 _minAmount == null &&
                                 _maxAmount == null
@@ -125,9 +123,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   Future<void> _showAmountDialog(BuildContext context) async {
     final minCtrl = TextEditingController(
-        text: _minAmount?.toStringAsFixed(0) ?? '');
+      text: _minAmount?.toStringAsFixed(0) ?? '',
+    );
     final maxCtrl = TextEditingController(
-        text: _maxAmount?.toStringAsFixed(0) ?? '');
+      text: _maxAmount?.toStringAsFixed(0) ?? '',
+    );
 
     final result = await showDialog<(double?, double?)>(
       context: context,
@@ -142,8 +142,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 labelText: 'Importo minimo (€)',
                 prefixText: '€ ',
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -152,8 +153,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 labelText: 'Importo massimo (€)',
                 prefixText: '€ ',
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ],
         ),
@@ -169,10 +171,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              final min =
-                  double.tryParse(minCtrl.text.replaceAll(',', '.'));
-              final max =
-                  double.tryParse(maxCtrl.text.replaceAll(',', '.'));
+              final min = double.tryParse(minCtrl.text.replaceAll(',', '.'));
+              final max = double.tryParse(maxCtrl.text.replaceAll(',', '.'));
               Navigator.of(ctx).pop((min, max));
             },
             child: const Text('Applica'),
@@ -192,8 +192,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void _openForm(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (_) =>
-              ExpenseFormScreen(tripId: widget.tripId)),
+        builder: (_) => ExpenseFormScreen(tripId: widget.tripId),
+      ),
     );
   }
 }
@@ -214,30 +214,32 @@ class _SummaryBar extends StatelessWidget {
     final overBudget = budget != null && totalActual > budget!;
     return Container(
       color: AppColors.primary,
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
             child: _Stat(
-                label: 'Spese effettive',
-                value: DateFormatter.currency(totalActual),
-                color: overBudget ? AppColors.error : Colors.white),
+              label: 'Spese effettive',
+              value: DateFormatter.currency(totalActual),
+              color: overBudget ? AppColors.error : Colors.white,
+            ),
           ),
           Container(width: 1, height: 36, color: Colors.white30),
           Expanded(
             child: _Stat(
-                label: 'Spese previste',
-                value: DateFormatter.currency(totalPlanned),
-                color: Colors.white),
+              label: 'Spese previste',
+              value: DateFormatter.currency(totalPlanned),
+              color: Colors.white,
+            ),
           ),
           if (budget != null) ...[
             Container(width: 1, height: 36, color: Colors.white30),
             Expanded(
               child: _Stat(
-                  label: 'Budget',
-                  value: DateFormatter.currency(budget!),
-                  color: Colors.white70),
+                label: 'Budget',
+                value: DateFormatter.currency(budget!),
+                color: Colors.white70,
+              ),
             ),
           ],
         ],
@@ -251,10 +253,7 @@ class _Stat extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _Stat(
-      {required this.label,
-      required this.value,
-      required this.color});
+  const _Stat({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -263,14 +262,18 @@ class _Stat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white60, fontSize: 11)),
-          Text(value,
-              style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 11),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
         ],
       ),
     );
@@ -322,7 +325,8 @@ class _FilterBar extends StatelessWidget {
           children: [
             FilterChip(
               label: const Text('Tutte'),
-              selected: selectedStatus == null &&
+              selected:
+                  selectedStatus == null &&
                   selectedCategory == null &&
                   !hasAmountFilter,
               onSelected: (_) {
@@ -332,30 +336,34 @@ class _FilterBar extends StatelessWidget {
               },
             ),
             const SizedBox(width: 6),
-            ...ExpenseStatus.values.map((s) => Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    label: Text(s.label),
-                    selected: selectedStatus == s,
-                    onSelected: (_) => onStatusChanged(
-                        selectedStatus == s ? null : s),
-                  ),
-                )),
+            ...ExpenseStatus.values.map(
+              (s) => Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: FilterChip(
+                  label: Text(s.label),
+                  selected: selectedStatus == s,
+                  onSelected: (_) =>
+                      onStatusChanged(selectedStatus == s ? null : s),
+                ),
+              ),
+            ),
             const VerticalDivider(width: 16),
-            ...ExpenseCategory.values.map((c) => Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    label: Text('${c.icon} ${c.label}'),
-                    selected: selectedCategory == c,
-                    onSelected: (_) => onCategoryChanged(
-                        selectedCategory == c ? null : c),
+            ...ExpenseCategory.values
+                .where((c) => c != ExpenseCategory.activity)
+                .map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      label: Text('${c.icon} ${c.label}'),
+                      selected: selectedCategory == c,
+                      onSelected: (_) =>
+                          onCategoryChanged(selectedCategory == c ? null : c),
+                    ),
                   ),
-                )),
+                ),
             const VerticalDivider(width: 16),
             FilterChip(
-              avatar: hasAmountFilter
-                  ? null
-                  : const Icon(Icons.euro, size: 14),
+              avatar: hasAmountFilter ? null : const Icon(Icons.euro, size: 14),
               label: Text(_amountLabel),
               selected: hasAmountFilter,
               onSelected: (_) => onAmountFilter(),
@@ -375,18 +383,21 @@ class _FilterBar extends StatelessWidget {
 class _ExpenseTile extends StatelessWidget {
   final Expense expense;
   final String tripId;
-  const _ExpenseTile(
-      {required this.expense, required this.tripId});
+  const _ExpenseTile({required this.expense, required this.tripId});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ExpenseFormScreen(
-              tripId: tripId, existingExpense: expense),
-        )),
+        onTap: expense.activityId != null ? null : () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ExpenseFormScreen(
+              tripId: tripId,
+              existingExpense: expense,
+            ),
+          ),
+        ),        
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -399,8 +410,10 @@ class _ExpenseTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Text(expense.category.icon,
-                      style: const TextStyle(fontSize: 22)),
+                  child: Text(
+                    expense.category.icon,
+                    style: const TextStyle(fontSize: 22),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -410,19 +423,21 @@ class _ExpenseTile extends StatelessWidget {
                   children: [
                     Text(
                       expense.title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       '${expense.category.label} • ${DateFormatter.date(expense.date)}',
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     Text(
                       expense.paymentMethod.label,
                       style: const TextStyle(
-                          fontSize: 11, color: AppColors.textHint),
+                        fontSize: 11,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ],
                 ),
@@ -443,8 +458,11 @@ class _ExpenseTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   GestureDetector(
                     onTap: () => _delete(context),
-                    child: const Icon(Icons.delete_outline,
-                        size: 18, color: AppColors.error),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      size: 24,
+                      color: AppColors.error,
+                    ),
                   ),
                 ],
               ),
@@ -456,15 +474,121 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
-    final confirmed = await ConfirmDialog.show(
-      context,
-      title: 'Elimina spesa',
-      message: 'Vuoi eliminare "${expense.title}"?',
-    );
-    if (confirmed && context.mounted) {
-      await context
-          .read<ExpenseProvider>()
-          .deleteExpense(tripId, expense.id);
+    final expenseProvider = context.read<ExpenseProvider>();
+    final activityProvider = context.read<ActivityProvider>();
+
+    if (expense.activityId != null && expense.status == ExpenseStatus.actual) {
+      // Spesa effettiva legata ad attività -> dialog con 2 opzioni
+      final choice = await showDialog<int?>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Spesa legata ad attività'),
+          content: const Text(
+            'Questa spesa è collegata a un\'attività.\n'
+            'Vuoi eliminare tutta l\'attività e le sue spese,\n'
+            'oppure segnare l\'attività come incompleta?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(1),
+              child: const Text('Segna attività incompleta'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(2),
+              child: const Text('Elimina attività e spese'),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == null || !context.mounted) return;
+
+      // Recupero tutte le spese del viaggio una sola volta
+      final allExpenses = expenseProvider.getByTrip(tripId);
+      if (choice == 1) {
+        await expenseProvider.deleteExpense(tripId, expense.id);
+
+        //Segna l'attività come incompleta (todo)
+        final activities = activityProvider.getByTrip(tripId);
+        final activity = activities.firstWhere(
+          (a) => a.id == expense.activityId,
+        );
+
+        if (activity.status == ActivityStatus.done) {
+          await activityProvider.updateActivity(
+            activity.copyWith(status: ActivityStatus.todo),
+          );
+        }
+      } else if (choice == 2) {
+        // Elimina TUTTE le spese (planned + actual) legate a quell'attività
+        final relatedExpenses = allExpenses
+            .where((e) => e.activityId == expense.activityId)
+            .toList();
+
+        for (final e in relatedExpenses) {
+          await expenseProvider.deleteExpense(tripId, e.id);
+        }
+
+        //Elimina l'attività
+        await activityProvider.deleteActivity(tripId, expense.activityId!);
+      }
+      return;
+    }  
+    if (expense.activityId != null &&
+        expense.status == ExpenseStatus.planned) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Spesa prevista legata ad attività'),
+          content: const Text(
+            'Questa spesa prevista è collegata a un\'attività.\n'
+            'Vuoi eliminare la spesa \n(anche un\'eventuale spesa effettiva collegata)\n e l\'attività collegata?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Annulla'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Elimina spesa e attività'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !context.mounted) return;
+
+      // Elimina la spesa prevista
+      final allExpenses = expenseProvider.getByTrip(tripId);
+      final relatedExpenses = allExpenses.where((c)=> c.activityId == expense.activityId).toList();
+
+      for(final e in relatedExpenses){
+        await expenseProvider.deleteExpense(tripId, e.id);
+      }
+
+      // Elimina l'attività collegata
+      await activityProvider.deleteActivity(tripId, expense.activityId!);
+
+      return;
     }
+
+    // Se NON è legata ad un'attività o non è effettiva -> normale conferma
+    if (expense.activityId == null || expense.status != ExpenseStatus.actual) {
+      final confirmed = await ConfirmDialog.show(
+        context,
+        title: 'Elimina spesa',
+        message: 'Vuoi eliminare "${expense.title}"?',
+      );
+      if (confirmed && context.mounted) {
+        await expenseProvider.deleteExpense(tripId, expense.id);
+      }
+      return;
+    }
+
   }
 }

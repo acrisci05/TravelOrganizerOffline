@@ -3,33 +3,27 @@ import 'package:uuid/uuid.dart';
 import '../data/models/activity.dart';
 import '../data/repositories/activity_repository.dart';
 
-// Provider che gestisce lo stato delle attività, indicizzate per viaggio.
-// Offre viste filtrate (per tappa, per categoria, non assegnate) e i conteggi
-// usati nelle statistiche.
 class ActivityProvider extends ChangeNotifier {
   final ActivityRepository _repo = ActivityRepository();
   final _uuid = const Uuid();
 
-  // Cache in memoria: idViaggio -> elenco attività del viaggio.
   final Map<String, List<Activity>> _activitiesByTrip = {};
 
-  List<Activity> getByTrip(String tripId) => _activitiesByTrip[tripId] ?? [];
+  List<Activity> getByTrip(String tripId) =>
+    List<Activity>.from(_activitiesByTrip[tripId] ?? [])
+      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
 
-  List<Activity> getByStage(String tripId, String stageId) =>
-      (_activitiesByTrip[tripId] ?? [])
-          .where((a) => a.stageId == stageId)
-          .toList()
-        ..sort((a, b) {
-          if (a.dateTime == null && b.dateTime == null) return 0;
-          if (a.dateTime == null) return 1;
-          if (b.dateTime == null) return -1;
-          return a.dateTime!.compareTo(b.dateTime!);
-        });
+List<Activity> getByStage(String tripId, String stageId) =>
+    (_activitiesByTrip[tripId] ?? [])
+        .where((a) => a.stageId == stageId)
+        .toList()
+      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
 
-  List<Activity> getUnassigned(String tripId) =>
-      (_activitiesByTrip[tripId] ?? [])
-          .where((a) => a.stageId == null)
-          .toList();
+List<Activity> getUnassigned(String tripId) =>
+    (_activitiesByTrip[tripId] ?? [])
+        .where((a) => a.stageId == null)
+        .toList()
+      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
 
   List<Activity> getByCategory(String tripId, ActivityCategory category) =>
       (_activitiesByTrip[tripId] ?? [])
@@ -41,7 +35,7 @@ class ActivityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addActivity({
+  Future<Activity> addActivity({
     required String tripId,
     String? stageId,
     required String title,
@@ -69,6 +63,7 @@ class ActivityProvider extends ChangeNotifier {
     list.add(activity);
     _activitiesByTrip[tripId] = list;
     notifyListeners();
+    return activity;
   }
 
   Future<void> updateActivity(Activity activity) async {
@@ -95,42 +90,50 @@ class ActivityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Duplica tutte le attività di un viaggio verso un nuovo viaggio.
-  // La mappa [stageIdMap] (idTappaOriginale -> idTappaCopiata) permette di
-  // ricollegare ogni attività alla corrispondente tappa duplicata; se
-  // l'attività non era associata ad alcuna tappa resta senza tappa.
-  // Lo stato viene riportato a "da fare" perché il viaggio copiato è una
-  // nuova pianificazione ancora tutta da svolgere.
   Future<void> duplicateActivitiesForTrip(
     String sourceTripId,
-    String newTripId,
-    Map<String, String> stageIdMap,
-  ) async {
-    final activities = await _repo.getByTrip(sourceTripId);
-    for (final a in activities) {
+    String newTripId, {
+    Map<String, String> stageIdMap = const {},
+  }) async {
+    if (!_activitiesByTrip.containsKey(sourceTripId)) {
+      await loadForTrip(sourceTripId);
+    }
+
+    final sourceList = List<Activity>.from(
+      _activitiesByTrip[sourceTripId] ?? [],
+    );
+    final newList = _activitiesByTrip[newTripId] ?? <Activity>[];
+
+    for (final activity in sourceList) {
+      final newStageId = activity.stageId != null
+          ? stageIdMap[activity.stageId!]
+          : null;
+
       final copy = Activity(
         id: _uuid.v4(),
         tripId: newTripId,
-        stageId: a.stageId == null ? null : stageIdMap[a.stageId],
-        title: a.title,
-        description: a.description,
-        dateTime: a.dateTime,
-        location: a.location,
-        category: a.category,
-        estimatedCost: a.estimatedCost,
-        status: ActivityStatus.todo,
-        notes: a.notes,
+        stageId: newStageId,
+        title: activity.title,
+        description: activity.description,
+        dateTime: activity.dateTime,
+        location: activity.location,
+        category: activity.category,
+        estimatedCost: activity.estimatedCost,
+        status: activity.status,
+        notes: activity.notes,
       );
+
       await _repo.insert(copy);
+      newList.add(copy);
     }
-    await loadForTrip(newTripId);
+
+    _activitiesByTrip[newTripId] = newList;
+    notifyListeners();
   }
 
-  int completedCount(String tripId) =>
-      (_activitiesByTrip[tripId] ?? [])
-          .where((a) => a.status == ActivityStatus.done)
-          .length;
+  int completedCount(String tripId) => (_activitiesByTrip[tripId] ?? [])
+      .where((a) => a.status == ActivityStatus.done)
+      .length;
 
-  int totalCount(String tripId) =>
-      (_activitiesByTrip[tripId] ?? []).length;
+  int totalCount(String tripId) => (_activitiesByTrip[tripId] ?? []).length;
 }

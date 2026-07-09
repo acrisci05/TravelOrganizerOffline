@@ -4,17 +4,15 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/trip.dart';
 import '../../providers/trip_provider.dart';
+import '../../providers/activity_provider.dart';
+import '../../providers/checklist_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../../shared/widgets/confirm_dialog.dart';
 import 'trip_form_screen.dart';
 import '../../providers/stage_provider.dart';
-import '../../providers/activity_provider.dart';
-import '../../providers/checklist_provider.dart';
 import 'trip_detail_screen.dart';
-
-// Modalità di duplicazione di un viaggio: copia completa oppure sole tappe.
-enum _DuplicateMode { full, stagesOnly }
 
 class TripsListScreen extends StatefulWidget {
   const TripsListScreen({super.key});
@@ -52,11 +50,16 @@ class _TripsListScreenState extends State<TripsListScreen> {
           // Tasto filtri
           IconButton(
             icon: const Icon(Icons.archive),
-            onPressed: () => setState(() => _showArchivedOnly = !_showArchivedOnly),
-            tooltip: _showArchivedOnly ? 'Mostra i viaggi non archiviati' : 'Mostra i viaggi archiviati',
+            onPressed: () =>
+                setState(() => _showArchivedOnly = !_showArchivedOnly),
+            tooltip: _showArchivedOnly
+                ? 'Mostra i viaggi non archiviati'
+                : 'Mostra i viaggi archiviati',
             style: IconButton.styleFrom(
-              backgroundColor: _showArchivedOnly ? AppColors.primaryLight : Colors.transparent,
-            )
+              backgroundColor: _showArchivedOnly
+                  ? AppColors.primaryLight
+                  : Colors.transparent,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -114,8 +117,10 @@ class _TripsListScreenState extends State<TripsListScreen> {
 
           var trips = provider.tripsSortedByStatus;
 
-          if(_showArchivedOnly){
-            trips = trips.where((t)=> t.status == TripStatus.archived).toList();
+          if (_showArchivedOnly) {
+            trips = trips
+                .where((t) => t.status == TripStatus.archived)
+                .toList();
           }
           if (trips.isEmpty) {
             return EmptyState(
@@ -230,8 +235,8 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  final status = trip.computedStatus;
-  final bg = _backgroundForStatus(status);
+    final status = trip.computedStatus;
+    final bg = _backgroundForStatus(status);
     return Card(
       color: bg,
       child: InkWell(
@@ -257,6 +262,7 @@ class _TripCard extends StatelessWidget {
                     ),
                   ),
                   StatusChip.trip(status),
+                  // StatusChip.trip(status),
                 ],
               ),
               const SizedBox(height: 6),
@@ -329,23 +335,20 @@ class _TripCard extends StatelessWidget {
                 children: [
                   _actionBtn(
                     context,
-                    Icons.copy_outlined,
-                    'Duplica',
-                    () => _duplicate(context),
-                  ),
-                  const SizedBox(width: 8),
-                  _actionBtn(
-                    context,
                     trip.status == TripStatus.archived
                         ? Icons.unarchive_outlined
                         : Icons.archive_outlined,
                     trip.status == TripStatus.archived
-                        ? 'Ripristina'
+                        ? 'Rimuovi dall\'archivio'
                         : 'Archivia',
                     () => _toggleArchive(context),
-                    color: trip.status == TripStatus.archived
-                        ? AppColors.accent
-                        : AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  _actionBtn(
+                    context,
+                    Icons.copy_outlined,
+                    'Duplica',
+                    () => _duplicate(context),
                   ),
                   const SizedBox(width: 8),
                   _actionBtn(
@@ -388,74 +391,67 @@ class _TripCard extends StatelessWidget {
     );
   }
 
-  // Colore di sfondo della card in base allo stato (calcolato) del viaggio.
   Color _backgroundForStatus(TripStatus status) {
     switch (status) {
       case TripStatus.future:
-        return const Color.fromARGB(255, 0, 0, 255).withValues(alpha: 0.2);
+        return AppColors.statusFuture.withOpacity(0.2);
       case TripStatus.ongoing:
-        return const Color.fromARGB(255, 255, 255, 0).withValues(alpha: 0.2);
+        return AppColors.statusOngoing.withOpacity(0.2);
       case TripStatus.completed:
-        return const Color.fromARGB(255, 0, 255, 0).withValues(alpha: 0.2);
+        return AppColors.statusCompleted.withOpacity(0.2);
       case TripStatus.archived:
-        return AppColors.statusArchived.withValues(alpha: 0.1);
+        return AppColors.statusArchived.withOpacity(0.1);
     }
   }
 
-  // Duplicazione del viaggio (feature avanzata). L'utente sceglie la modalità
-  // di copia: completa (tappe, attività e checklist) oppure delle sole tappe,
-  // utile per riutilizzare l'itinerario ripartendo con attività e checklist
-  // vuote. Le tappe vengono comunque sempre duplicate: la mappa degli id da
-  // esse restituita serve a ricollegare correttamente attività e checklist
-  // alle nuove tappe quando si duplica anche il resto.
   Future<void> _duplicate(BuildContext context) async {
-    final mode = await showModalBottomSheet<_DuplicateMode>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const _DuplicateModeSheet(),
-    );
-    if (mode == null || !context.mounted) return;
-
     final tripProvider = context.read<TripProvider>();
     final stageProvider = context.read<StageProvider>();
     final activityProvider = context.read<ActivityProvider>();
     final checklistProvider = context.read<ChecklistProvider>();
+    final expenseProvider = context.read<ExpenseProvider>();
     final messenger = ScaffoldMessenger.of(context);
 
     final newTrip = await tripProvider.duplicateTrip(trip);
-    final stageIdMap =
-        await stageProvider.duplicateStagesForTrip(trip.id, newTrip.id);
-    if (mode == _DuplicateMode.full) {
-      await activityProvider.duplicateActivitiesForTrip(
-          trip.id, newTrip.id, stageIdMap);
-      await checklistProvider.duplicateChecklistsForTrip(
-          trip.id, newTrip.id, stageIdMap);
-    }
+
+    final stageIdMap = await stageProvider.duplicateStagesForTrip(
+      trip.id,
+      newTrip.id,
+    );
+
+    await activityProvider.duplicateActivitiesForTrip(
+      trip.id,
+      newTrip.id,
+      stageIdMap: stageIdMap,
+    );
+
+    await checklistProvider.duplicateChecklistsForTrip(trip.id, newTrip.id);
+    await expenseProvider.duplicateExpensesForTrip(trip.id, newTrip.id);
 
     messenger.showSnackBar(
-      SnackBar(
-        content: Text(mode == _DuplicateMode.full
-            ? 'Viaggio duplicato con tappe, attività e checklist'
-            : 'Viaggio duplicato con le sole tappe'),
+      const SnackBar(
+        content: Text('Viaggio duplicato con tutti i dati associati'),
       ),
     );
   }
 
-  // Archivia il viaggio o lo ripristina se già archiviato. Una volta
-  // archiviato, lo stato resta "archiviato" a prescindere dalle date finché
-  // non si preme di nuovo il pulsante.
   Future<void> _toggleArchive(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final wasArchived = trip.status == TripStatus.archived;
-    await context.read<TripProvider>().toggleArchive(trip);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-            wasArchived ? 'Viaggio ripristinato' : 'Viaggio archiviato'),
-      ),
-    );
+    final provider = context.read<TripProvider>();
+    final isArchived = trip.status == TripStatus.archived;
+
+    await provider.toggleArchive(trip);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArchived
+                ? 'Viaggio rimosso dall\'archivio.'
+                : 'Viaggio archiviato\nNon verrà preso in considerazione nel calcolo delle statistiche',
+          ),
+        ),
+      );
+    }
   }
 
   void _edit(BuildContext context) {
@@ -474,48 +470,5 @@ class _TripCard extends StatelessWidget {
     if (confirmed && context.mounted) {
       await context.read<TripProvider>().deleteTrip(trip.id);
     }
-  }
-}
-
-// Menu inferiore per scegliere come duplicare il viaggio. Restituisce, tramite
-// Navigator.pop, la modalità selezionata (oppure null se l'utente annulla).
-class _DuplicateModeSheet extends StatelessWidget {
-  const _DuplicateModeSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Come vuoi duplicare il viaggio?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.copy_all_outlined,
-                  color: AppColors.primary),
-              title: const Text('Copia completa'),
-              subtitle: const Text('Tappe, attività e checklist'),
-              onTap: () => Navigator.of(context).pop(_DuplicateMode.full),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.route_outlined,
-                  color: AppColors.primary),
-              title: const Text('Solo le tappe'),
-              subtitle: const Text('Copia il solo itinerario delle tappe'),
-              onTap: () =>
-                  Navigator.of(context).pop(_DuplicateMode.stagesOnly),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

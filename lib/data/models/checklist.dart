@@ -1,8 +1,5 @@
 import 'checklist_item.dart';
 
-// Modello di dominio della checklist (lista di controllo) di un viaggio,
-// ad esempio documenti da preparare o oggetti da comprare. La lista valigia
-// è realizzata come una checklist con titolo dedicato.
 class Checklist {
   final String id;
   final String tripId;

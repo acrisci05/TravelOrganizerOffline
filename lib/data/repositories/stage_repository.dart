@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/stage.dart';
 
-// Repository di accesso ai dati delle tappe (tabella "stages").
 class StageRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 

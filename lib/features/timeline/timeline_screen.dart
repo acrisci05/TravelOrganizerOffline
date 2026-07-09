@@ -21,11 +21,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget build(BuildContext context) {
     // final stages =
     //     context.watch<StageProvider>().getByTrip(widget.tripId);
-    final stages = context. watch<StageProvider>().getByTrip(widget.tripId).toList()..sort(
-      (a,b) => a.date.compareTo(b.date)
+    final stages =
+        context.watch<StageProvider>().getByTrip(widget.tripId).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+    final allActivities = context.watch<ActivityProvider>().getByTrip(
+      widget.tripId,
     );
-    final allActivities =
-        context.watch<ActivityProvider>().getByTrip(widget.tripId);
 
     if (stages.isEmpty && allActivities.isEmpty) {
       return const EmptyState(
@@ -41,24 +42,42 @@ class _TimelineScreenState extends State<TimelineScreen> {
       final stageActivities =
           allActivities.where((a) => a.stageId == stage.id).toList()
             ..sort((a, b) {
+              if (a.dateTime == null && b.dateTime == null) {
+                return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+              }
               if (a.dateTime == null) return 1;
               if (b.dateTime == null) return -1;
-              return a.dateTime!.compareTo(b.dateTime!);
+
+              final dateCompare = a.dateTime!.compareTo(b.dateTime!);
+              if (dateCompare != 0) return dateCompare;
+
+              return a.title.toLowerCase().compareTo(b.title.toLowerCase());
             });
-      entries.add(_TimelineEntry.stage(stage.title, stage.date,
-          stage.location, stageActivities));
+      entries.add(
+        _TimelineEntry.stage(
+          stage.title,
+          stage.date,
+          stage.location,
+          stageActivities,
+        ),
+      );
     }
 
-    final unassigned =
-        allActivities.where((a) => a.stageId == null).toList()
-          ..sort((a, b) {
-            if (a.dateTime == null) return 1;
-            if (b.dateTime == null) return -1;
-            return a.dateTime!.compareTo(b.dateTime!);
-          });
+    final unassigned = allActivities.where((a) => a.stageId == null).toList()
+      ..sort((a, b) {
+        if (a.dateTime == null && b.dateTime == null) {
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        }
+        if (a.dateTime == null) return 1;
+        if (b.dateTime == null) return -1;
+
+        final dateCompare = a.dateTime!.compareTo(b.dateTime!);
+        if (dateCompare != 0) return dateCompare;
+
+        return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      });
     if (unassigned.isNotEmpty) {
-      entries.add(
-          _TimelineEntry.unassigned(unassigned));
+      entries.add(_TimelineEntry.unassigned(unassigned));
     }
 
     return ListView.builder(
@@ -79,34 +98,30 @@ class _TimelineEntry {
   final List<Activity> activities;
   final bool isUnassigned;
 
-  _TimelineEntry.stage(
-      this.title, this.date, this.location, this.activities)
-      : isUnassigned = false;
+  _TimelineEntry.stage(this.title, this.date, this.location, this.activities)
+    : isUnassigned = false;
 
   _TimelineEntry.unassigned(this.activities)
-      : title = 'Attività senza tappa',
-        date = null,
-        location = null,
-        isUnassigned = true;
+    : title = 'Attività senza tappa',
+      date = null,
+      location = null,
+      isUnassigned = true;
 }
 
 class _TimelineEntryWidget extends StatefulWidget {
   final _TimelineEntry entry;
   final bool isLast;
-  const _TimelineEntryWidget(
-      {required this.entry, required this.isLast});
+  const _TimelineEntryWidget({required this.entry, required this.isLast});
 
   @override
-  State<_TimelineEntryWidget> createState() =>
-      _TimelineEntryWidgetState();
+  State<_TimelineEntryWidget> createState() => _TimelineEntryWidgetState();
 }
 
-class _TimelineEntryWidgetState
-    extends State<_TimelineEntryWidget> {
+class _TimelineEntryWidgetState extends State<_TimelineEntryWidget> {
   late bool _expanded;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     _expanded = widget.entry.activities.isNotEmpty;
   }
@@ -130,13 +145,12 @@ class _TimelineEntryWidgetState
                         ? AppColors.textSecondary
                         : AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.white, width: 2),
+                    border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
                       BoxShadow(
-                          color:
-                              AppColors.primary.withAlpha(60),
-                          blurRadius: 4)
+                        color: AppColors.primary.withAlpha(60),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
                 ),
@@ -144,8 +158,7 @@ class _TimelineEntryWidgetState
                   Expanded(
                     child: Container(
                       width: 2,
-                      color: AppColors.primaryLight
-                          .withAlpha(80),
+                      color: AppColors.primaryLight.withAlpha(80),
                     ),
                   ),
               ],
@@ -156,44 +169,36 @@ class _TimelineEntryWidgetState
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   GestureDetector(
-                    onTap: () => setState(
-                        () => _expanded = !_expanded),
+                    onTap: () => setState(() => _expanded = !_expanded),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: e.isUnassigned
                             ? AppColors.background
-                            : AppColors.primary
-                                .withAlpha(15),
-                        borderRadius:
-                            BorderRadius.circular(10),
+                            : AppColors.primary.withAlpha(15),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: e.isUnassigned
-                                ? AppColors.textHint
-                                    .withAlpha(80)
-                                : AppColors.primary
-                                    .withAlpha(60)),
+                          color: e.isUnassigned
+                              ? AppColors.textHint.withAlpha(80)
+                              : AppColors.primary.withAlpha(60),
+                        ),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   e.title,
                                   style: TextStyle(
-                                    fontWeight:
-                                        FontWeight.bold,
+                                    fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                     color: e.isUnassigned
-                                        ? AppColors
-                                            .textSecondary
+                                        ? AppColors.textSecondary
                                         : AppColors.primary,
                                   ),
                                 ),
@@ -202,18 +207,18 @@ class _TimelineEntryWidgetState
                                   Text(
                                     DateFormatter.date(e.date!),
                                     style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors
-                                            .textSecondary),
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                 ],
                                 if (e.location != null)
                                   Text(
                                     e.location!,
                                     style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors
-                                            .textSecondary),
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                               ],
                             ),
@@ -221,14 +226,13 @@ class _TimelineEntryWidgetState
                           Text(
                             '${e.activities.length} attività',
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary),
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Icon(
-                            _expanded
-                                ? Icons.expand_less
-                                : Icons.expand_more,
+                            _expanded ? Icons.expand_less : Icons.expand_more,
                             size: 20,
                             color: AppColors.textSecondary,
                           ),
@@ -237,21 +241,21 @@ class _TimelineEntryWidgetState
                     ),
                   ),
                   if (_expanded && e.activities.isNotEmpty)
-                    ...e.activities.map((a) => Padding(
-                          padding: const EdgeInsets.only(
-                              top: 6, left: 8),
-                          child: _ActivityTimeline(
-                              activity: a),
-                        )),
+                    ...e.activities.map(
+                      (a) => Padding(
+                        padding: const EdgeInsets.only(top: 6, left: 8),
+                        child: _ActivityTimeline(activity: a),
+                      ),
+                    ),
                   if (_expanded && e.activities.isEmpty)
                     const Padding(
-                      padding:
-                          EdgeInsets.only(top: 8, left: 8),
+                      padding: EdgeInsets.only(top: 8, left: 8),
                       child: Text(
                         'Nessuna attività in questa tappa',
                         style: TextStyle(
-                            color: AppColors.textHint,
-                            fontStyle: FontStyle.italic),
+                          color: AppColors.textHint,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                 ],
@@ -272,18 +276,15 @@ class _ActivityTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(
-          horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-            color: AppColors.textHint.withAlpha(60)),
+        border: Border.all(color: AppColors.textHint.withAlpha(60)),
       ),
       child: Row(
         children: [
-          Text(activity.category.icon,
-              style: const TextStyle(fontSize: 18)),
+          Text(activity.category.icon, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -294,30 +295,29 @@ class _ActivityTimeline extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    decoration:
-                        activity.status == ActivityStatus.done
-                            ? TextDecoration.lineThrough
-                            : null,
-                    color:
-                        activity.status == ActivityStatus.done
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
+                    decoration: activity.status == ActivityStatus.done
+                        ? TextDecoration.lineThrough
+                        : null,
+                    color: activity.status == ActivityStatus.done
+                        ? AppColors.textSecondary
+                        : AppColors.textPrimary,
                   ),
                 ),
                 if (activity.dateTime != null)
                   Text(
                     DateFormatter.time(activity.dateTime!),
                     style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary),
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 if (activity.estimatedCost != null)
                   Text(
-                    DateFormatter.currency(
-                        activity.estimatedCost!),
+                    DateFormatter.currency(activity.estimatedCost!),
                     style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.primary),
+                      fontSize: 11,
+                      color: AppColors.primary,
+                    ),
                   ),
               ],
             ),

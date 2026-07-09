@@ -3,9 +3,11 @@ import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/activity.dart';
+import '../../data/models/expense.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/stage_provider.dart';
 import '../../providers/trip_provider.dart';
+import '../../providers/expense_provider.dart';
 
 class ActivityFormScreen extends StatefulWidget {
   final String tripId;
@@ -46,7 +48,9 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
     _titleCtrl = TextEditingController(text: a?.title);
     _descCtrl = TextEditingController(text: a?.description);
     _locationCtrl = TextEditingController(text: a?.location);
-    _costCtrl = TextEditingController(text: a?.estimatedCost?.toString());
+    _costCtrl = TextEditingController(
+      text: a?.estimatedCost?.toString() ?? '0.00',
+    );
     _notesCtrl = TextEditingController(text: a?.notes);
     _dateTime = a?.dateTime;
     _category = a?.category ?? ActivityCategory.other;
@@ -133,7 +137,9 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
               keyboardType: TextInputType.number,
               validator: (v) {
                 if (v != null && v.isNotEmpty) {
-                  final parse = double.tryParse(v.replaceAll(',', '.'));
+                  final correctedV = v.replaceAll('-', '').replaceAll(',', '.');
+                  final parse = double.tryParse(correctedV);
+
                   if (parse == null) {
                     return 'Inserisci un numero valido';
                   }
@@ -292,30 +298,106 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
     try {
-      final provider = context.read<ActivityProvider>();
-      final cost = _costCtrl.text.isEmpty
+      final expenseProvider = context.read<ExpenseProvider>();
+      final activityProvider = context.read<ActivityProvider>();
+      final rawCost = _costCtrl.text.trim();
+      final sanitizedCost = rawCost.replaceAll(',', '.').replaceAll('-', '');
+      final cost = sanitizedCost.isEmpty
           ? null
-          : double.tryParse(_costCtrl.text.replaceAll(',', '.'));
+          : double.tryParse(sanitizedCost);
 
+      // if (_isEditing) {
+      //   await provider.updateActivity(
+      //     widget.existingActivity!.copyWith(
+      //       title: _titleCtrl.text.trim(),
+      //       description: _descCtrl.text.isEmpty ? null : _descCtrl.text.trim(),
+      //       dateTime: _dateTime,
+      //       location: _locationCtrl.text.isEmpty
+      //           ? null
+      //           : _locationCtrl.text.trim(),
+      //       category: _category,
+      //       estimatedCost: cost,
+      //       status: _status,
+      //       stageId: _stageId,
+      //       clearStageId: _stageId == null,
+      //       notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
+      //     ),
+      //   );
       if (_isEditing) {
-        await provider.updateActivity(
-          widget.existingActivity!.copyWith(
-            title: _titleCtrl.text.trim(),
-            description: _descCtrl.text.isEmpty ? null : _descCtrl.text.trim(),
-            dateTime: _dateTime,
-            location: _locationCtrl.text.isEmpty
-                ? null
-                : _locationCtrl.text.trim(),
-            category: _category,
-            estimatedCost: cost,
-            status: _status,
-            stageId: _stageId,
-            clearStageId: _stageId == null,
-            notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
-          ),
+        // Aggiorno l’attività
+        final updated = widget.existingActivity!.copyWith(
+          title: _titleCtrl.text.trim(),
+          description: _descCtrl.text.isEmpty ? null : _descCtrl.text.trim(),
+          dateTime: _dateTime,
+          location: _locationCtrl.text.isEmpty
+              ? null
+              : _locationCtrl.text.trim(),
+          category: _category,
+          estimatedCost: cost,
+          status: _status,
+          stageId: _stageId,
+          clearStageId: _stageId == null,
+          notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
         );
+
+        await activityProvider.updateActivity(updated);
+
+        final allExpenses = expenseProvider.getByTrip(updated.tripId);
+        final relatedExpenses = allExpenses
+            .where((e) => e.activityId == updated.id)
+            .toList();
+
+        for (final e in relatedExpenses) {
+          await expenseProvider.updateExpense(
+            e.copyWith(title: updated.title, stageId: updated.stageId),
+          );
+        }
+
+        // Se l’attività NON è completata, sincronizzo la spesa "prevista"
+        if (widget.existingActivity!.status != ActivityStatus.done) {
+          final expenses = expenseProvider.getByTrip(updated.tripId);
+          final planned = expenses
+              .where(
+                (e) =>
+                    e.activityId == updated.id &&
+                    e.status == ExpenseStatus.planned,
+              )
+              .firstOrNull; // grazie a package:collection
+
+          if (cost != null) {
+            // C'è un costo previsto -> crea/aggiorna spesa planned
+            if (planned != null) {
+              await expenseProvider.updateExpense(
+                planned.copyWith(
+                  amount: cost,
+                  title: updated.title,
+                  date: updated.dateTime ?? planned.date,
+                  stageId: updated.stageId,
+                ),
+              );
+            } else {
+              await expenseProvider.addExpense(
+                tripId: updated.tripId,
+                stageId: updated.stageId,
+                activityId: updated.id,
+                title: updated.title,
+                amount: cost,
+                category: ExpenseCategory.other,
+                date: updated.dateTime ?? DateTime.now(),
+                paymentMethod: PaymentMethod.cash,
+                status: ExpenseStatus.planned,
+                notes: null,
+              );
+            }
+          } else {
+            // Nessun costo previsto -> elimina eventuale spesa planned
+            if (planned != null) {
+              await expenseProvider.deleteExpense(updated.tripId, planned.id);
+            }
+          }
+        }
       } else {
-        await provider.addActivity(
+        final newActivity = await activityProvider.addActivity(
           tripId: widget.tripId,
           stageId: _stageId,
           title: _titleCtrl.text.trim(),
@@ -328,6 +410,21 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
           estimatedCost: cost,
           notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
         );
+
+        if (cost != null) {
+          await expenseProvider.addExpense(
+            tripId: widget.tripId,
+            stageId: newActivity.stageId,
+            activityId: newActivity.id,
+            title: newActivity.title,
+            amount: cost,
+            category: ExpenseCategory.activity,
+            date: newActivity.dateTime ?? DateTime.now(),
+            paymentMethod: PaymentMethod.cash,
+            status: ExpenseStatus.planned,
+            notes: null,
+          );
+        }
       }
       if (mounted) Navigator.of(context).pop();
     } finally {

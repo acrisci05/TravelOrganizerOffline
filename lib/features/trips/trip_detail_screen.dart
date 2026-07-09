@@ -178,7 +178,7 @@ class _TripSliverAppBar extends StatelessWidget {
                           ),
                         ),
                       ),
-                      StatusChip.trip(trip.computedStatus),
+                      StatusChip.trip(trip.computedStatus, whiteStyle: true),
                     ],
                   ),
                   const SizedBox(height: 4),

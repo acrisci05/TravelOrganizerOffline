@@ -4,17 +4,13 @@ import '../data/models/checklist.dart';
 import '../data/models/checklist_item.dart';
 import '../data/repositories/checklist_repository.dart';
 
-// Provider che gestisce lo stato delle checklist e dei relativi elementi,
-// indicizzati per viaggio. Include la duplicazione delle checklist.
 class ChecklistProvider extends ChangeNotifier {
   final ChecklistRepository _repo = ChecklistRepository();
   final _uuid = const Uuid();
 
-  // Cache in memoria: idViaggio -> elenco checklist del viaggio.
   final Map<String, List<Checklist>> _checklistsByTrip = {};
 
-  List<Checklist> getByTrip(String tripId) =>
-      _checklistsByTrip[tripId] ?? [];
+  List<Checklist> getByTrip(String tripId) => _checklistsByTrip[tripId] ?? [];
 
   Future<void> loadForTrip(String tripId) async {
     _checklistsByTrip[tripId] = await _repo.getByTrip(tripId);
@@ -59,8 +55,7 @@ class ChecklistProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addItem(
-      String tripId, String checklistId, String title) async {
+  Future<void> addItem(String tripId, String checklistId, String title) async {
     final list = _checklistsByTrip[tripId] ?? [];
     final idx = list.indexWhere((c) => c.id == checklistId);
     if (idx == -1) return;
@@ -80,7 +75,10 @@ class ChecklistProvider extends ChangeNotifier {
   }
 
   Future<void> toggleItem(
-      String tripId, String checklistId, String itemId) async {
+    String tripId,
+    String checklistId,
+    String itemId,
+  ) async {
     final list = _checklistsByTrip[tripId] ?? [];
     final cIdx = list.indexWhere((c) => c.id == checklistId);
     if (cIdx == -1) return;
@@ -98,7 +96,10 @@ class ChecklistProvider extends ChangeNotifier {
   }
 
   Future<void> updateItem(
-      String tripId, String checklistId, ChecklistItem item) async {
+    String tripId,
+    String checklistId,
+    ChecklistItem item,
+  ) async {
     await _repo.updateItem(item);
     final list = _checklistsByTrip[tripId] ?? [];
     final cIdx = list.indexWhere((c) => c.id == checklistId);
@@ -113,60 +114,27 @@ class ChecklistProvider extends ChangeNotifier {
   }
 
   Future<void> deleteItem(
-      String tripId, String checklistId, String itemId) async {
+    String tripId,
+    String checklistId,
+    String itemId,
+  ) async {
     await _repo.deleteItem(itemId);
     final list = _checklistsByTrip[tripId] ?? [];
     final cIdx = list.indexWhere((c) => c.id == checklistId);
     if (cIdx == -1) return;
     final checklist = list[cIdx];
-    final newItems =
-        checklist.items.where((i) => i.id != itemId).toList();
+    final newItems = checklist.items.where((i) => i.id != itemId).toList();
     list[cIdx] = checklist.copyWith(items: newItems);
     _checklistsByTrip[tripId] = list;
     notifyListeners();
   }
 
-  // Duplica tutte le checklist di un viaggio (con i relativi elementi) verso
-  // un nuovo viaggio. La mappa [stageIdMap] (idTappaOriginale -> idTappaCopiata)
-  // consente di mantenere l'eventuale associazione a una tappa. Gli elementi
-  // vengono copiati come "da completare" perché il viaggio duplicato è una
-  // nuova pianificazione.
-  Future<void> duplicateChecklistsForTrip(
-    String sourceTripId,
-    String newTripId,
-    Map<String, String> stageIdMap,
-  ) async {
-    final checklists = await _repo.getByTrip(sourceTripId);
-    for (final source in checklists) {
-      final newChecklistId = _uuid.v4();
-      final copy = Checklist(
-        id: newChecklistId,
-        tripId: newTripId,
-        stageId:
-            source.stageId == null ? null : stageIdMap[source.stageId],
-        title: source.title,
-        description: source.description,
-        items: source.items
-            .map((i) => ChecklistItem(
-                  id: _uuid.v4(),
-                  checklistId: newChecklistId,
-                  title: i.title,
-                  isCompleted: false,
-                  order: i.order,
-                ))
-            .toList(),
-      );
-      await _repo.insertChecklist(copy);
-    }
-    await loadForTrip(newTripId);
-  }
-
-  // Duplica una singola checklist all'interno dello stesso viaggio.
-  Future<void> duplicateChecklist(
-      String tripId, String checklistId) async {
+  Future<void> duplicateChecklist(String tripId, String checklistId) async {
     final list = _checklistsByTrip[tripId] ?? [];
-    final source = list.firstWhere((c) => c.id == checklistId,
-        orElse: () => throw StateError('not found'));
+    final source = list.firstWhere(
+      (c) => c.id == checklistId,
+      orElse: () => throw StateError('not found'),
+    );
     final newChecklistId = _uuid.v4();
     final copy = Checklist(
       id: newChecklistId,
@@ -175,17 +143,61 @@ class ChecklistProvider extends ChangeNotifier {
       title: '${source.title} (copia)',
       description: source.description,
       items: source.items
-          .map((i) => ChecklistItem(
-                id: _uuid.v4(),
-                checklistId: newChecklistId,
-                title: i.title,
-                order: i.order,
-              ))
+          .map(
+            (i) => ChecklistItem(
+              id: _uuid.v4(),
+              checklistId: newChecklistId,
+              isCompleted: i.isCompleted,
+              title: i.title,
+              order: i.order,
+            ),
+          )
           .toList(),
     );
     await _repo.insertChecklist(copy);
     list.add(copy);
     _checklistsByTrip[tripId] = list;
+    notifyListeners();
+  }
+
+  Future<void> duplicateChecklistsForTrip(
+    String sourceTripId,
+    String newTripId,
+  ) async {
+    if (!_checklistsByTrip.containsKey(sourceTripId)) {
+      await loadForTrip(sourceTripId);
+    }
+
+    final sourceList = List<Checklist>.from(
+      _checklistsByTrip[sourceTripId] ?? [],
+    );
+    final newList = _checklistsByTrip[newTripId] ?? <Checklist>[];
+
+    for (final checklist in sourceList) {
+      final newChecklistId = _uuid.v4();
+
+      final copy = Checklist(
+        id: newChecklistId,
+        tripId: newTripId,
+        stageId: null,
+        title: checklist.title,
+        description: checklist.description,
+        items: checklist.items.map((item) {
+          return ChecklistItem(
+            id: _uuid.v4(),
+            checklistId: newChecklistId,
+            title: item.title,
+            isCompleted: item.isCompleted,
+            order: item.order,
+          );
+        }).toList(),
+      );
+
+      await _repo.insertChecklist(copy);
+      newList.add(copy);
+    }
+
+    _checklistsByTrip[newTripId] = newList;
     notifyListeners();
   }
 }

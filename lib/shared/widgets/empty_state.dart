@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
-// Widget riutilizzabile per gli "empty state": mostra un'icona, un titolo,
-// un sottotitolo e, facoltativamente, un pulsante di call-to-action quando
-// una lista è vuota o una ricerca non ha prodotto risultati.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;

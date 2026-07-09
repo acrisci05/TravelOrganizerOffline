@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/activity.dart';
 
-// Repository di accesso ai dati delle attività (tabella "activities").
 class ActivityRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 

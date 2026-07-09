@@ -92,6 +92,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               decoration:
                   const InputDecoration(labelText: 'Categoria'),
               items: ExpenseCategory.values
+                  .where((c) => c != ExpenseCategory.activity)
                   .map((c) => DropdownMenuItem(
                         value: c,
                         child: Text('${c.icon} ${c.label}'),

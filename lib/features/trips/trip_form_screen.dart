@@ -23,7 +23,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
   late final TextEditingController _notesCtrl;
   late DateTime _startDate;
   late DateTime _endDate;
-  TripStatus _status = TripStatus.future;
   bool _isSaving = false;
 
   bool get _isEditing => widget.existingTrip != null;
@@ -40,7 +39,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
     _notesCtrl = TextEditingController(text: t?.notes);
     _startDate = t?.startDate ?? DateTime.now().add(const Duration(days: 1));
     _endDate = t?.endDate ?? DateTime.now().add(const Duration(days: 7));
-    _status = t?.status ?? TripStatus.future;
   }
 
   @override
@@ -112,20 +110,6 @@ class _TripFormScreenState extends State<TripFormScreen> {
               prefixIcon: Icons.group_outlined,
             ),
             const SizedBox(height: 12),
-            // Status viene mostrato solo quanod si modifica
-            if (_isEditing) ...[
-              DropdownButtonFormField<TripStatus>(
-                initialValue: _status,
-                decoration: const InputDecoration(labelText: 'Stato'),
-                items: TripStatus.values
-                    .map(
-                      (s) => DropdownMenuItem(value: s, child: Text(s.label)),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _status = v ?? _status),
-              ),
-              const SizedBox(height: 12),
-            ],
             _field(
               _descCtrl,
               'Descrizione',
@@ -176,6 +160,9 @@ class _TripFormScreenState extends State<TripFormScreen> {
     );
   }
 
+  // TripStatus computedStatus (DateTime startDat, DateTime endDay){
+  // }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_endDate.isBefore(_startDate)) {
@@ -198,32 +185,28 @@ class _TripFormScreenState extends State<TripFormScreen> {
     );
     final endDay = DateTime(_endDate.year, _endDate.month, _endDate.day);
 
-    // Se le date sono nel passato chiediamo conferma esplicita all'utente,
-    // senza bloccare l'inserimento (potrebbe registrare un viaggio già svolto).
     if (startDay.isBefore(today)) {
       final confirmed = await ConfirmDialog.show(
         context,
         title: 'Conferma la data inserita',
         message:
             'La data di inizio del viaggio è precedente ad oggi. Vuoi continuare comunque?',
-        confirmLabel: 'Continua',
+            confirmLabel: 'Continua',
       );
       if (confirmed != true) return;
     }
 
     if (endDay.isBefore(today)) {
-      if (!mounted) return;
       final confirmed = await ConfirmDialog.show(
         context,
         title: 'Conferma la data inserita',
         message:
             'La data di fine del viaggio è precedente ad oggi. Vuoi continuare comunque?',
-        confirmLabel: 'Continua',
+            confirmLabel: 'Continua',
       );
       if (confirmed != true) return;
     }
 
-    if (!mounted) return;
     setState(() => _isSaving = true);
     try {
       final provider = context.read<TripProvider>();
@@ -232,18 +215,21 @@ class _TripFormScreenState extends State<TripFormScreen> {
           : double.tryParse(_budgetCtrl.text.replaceAll(',', '.'));
 
       if (_isEditing) {
-        final updated = widget.existingTrip!.copyWith(
+        final draft = widget.existingTrip!.copyWith(
           title: _titleCtrl.text.trim(),
           destination: _destCtrl.text.trim(),
           startDate: _startDate,
           endDate: _endDate,
           description: _descCtrl.text.isEmpty ? null : _descCtrl.text.trim(),
-          status: _status,
+          // status: computedStatus(),
           budget: budget,
           participants: _participantsCtrl.text.isEmpty
               ? null
               : _participantsCtrl.text.trim(),
           notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text.trim(),
+        );
+        final updated = draft.copyWith(
+          status: draft.computedStatus,
         );
         await provider.updateTrip(updated);
       } else {

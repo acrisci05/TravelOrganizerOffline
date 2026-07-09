@@ -3,9 +3,6 @@ import 'package:uuid/uuid.dart';
 import '../data/models/trip.dart';
 import '../data/repositories/trip_repository.dart';
 
-// Provider (ChangeNotifier) che gestisce lo stato dei viaggi in memoria:
-// caricamento dal database, ricerca, filtri, ordinamento e operazioni CRUD.
-// Notifica la UI ad ogni variazione tramite notifyListeners().
 class TripProvider extends ChangeNotifier {
   final TripRepository _repo = TripRepository();
   final _uuid = const Uuid();
@@ -132,20 +129,7 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Archivia o ripristina un viaggio. L'archiviazione forza lo stato ad
-  // "archiviato" e questo resta invariato indipendentemente dalle date finché
-  // non si preme di nuovo il pulsante. Il ripristino riporta il viaggio allo
-  // stato coerente con le sue date (futuro / in corso / completato).
-  Future<void> toggleArchive(Trip trip) async {
-    final updated = trip.status == TripStatus.archived
-        ? trip.copyWith(status: trip.dateStatus)
-        : trip.copyWith(status: TripStatus.archived);
-    await updateTrip(updated);
-  }
-
-  // Duplica il solo record del viaggio (senza tappe/attività/checklist).
-  // La copia parte sempre come viaggio "futuro". La duplicazione dei dati
-  // collegati è orchestrata dai rispettivi provider a partire dal nuovo id.
+  // Duplicare il trip
   Future<Trip> duplicateTrip(Trip source) async {
     final newId = _uuid.v4();
     final copy = Trip(
@@ -155,7 +139,7 @@ class TripProvider extends ChangeNotifier {
       startDate: source.startDate,
       endDate: source.endDate,
       description: source.description,
-      status: TripStatus.future,
+      status: source.status,
       budget: source.budget,
       participants: source.participants,
       notes: source.notes,
@@ -185,6 +169,39 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future toggleArchive(Trip trip) async{
+    final isArchived = trip.status == TripStatus.archived;
+    late TripStatus newStatus;
+
+    if(isArchived){
+      final now = DateTime.now();
+      final today = DateTime (now.year, now.month, now.day);
+      final start = DateTime(trip.startDate.year,trip.startDate.month,trip.startDate.day);
+      final end = DateTime(trip.endDate.year,trip.endDate.month,trip.endDate.day);
+
+      if(today.isBefore(start)){
+        newStatus = TripStatus.future;
+      }
+      else if(today.isAfter(end)){
+        newStatus = TripStatus.completed;
+      }
+      else {
+        newStatus = TripStatus.ongoing;
+      }
+    }
+    else{
+      newStatus = TripStatus.archived;
+    }
+
+    final updated = trip.copyWith(status: newStatus);
+    await _repo.update(updated);
+
+    final index = _trips.indexWhere((t)=> t.id == trip.id);
+    if(index != -1){
+      _trips[index]= updated;
+      notifyListeners();
+    }
+  }
   // Metodo che restituisce una mappa con numero di viaggi per stato
   Map<TripStatus, int> get statusCounts {
     final counts = <TripStatus, int>{};

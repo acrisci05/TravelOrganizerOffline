@@ -1,7 +1,5 @@
 import 'package:intl/intl.dart';
 
-// Utility di formattazione di date, orari e valuta secondo la localizzazione
-// italiana (it_IT), usata in modo uniforme in tutta l'interfaccia.
 class DateFormatter {
   static final _dateFormat = DateFormat('dd/MM/yyyy', 'it_IT');
   static final _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm', 'it_IT');

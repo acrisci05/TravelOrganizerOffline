@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-// Definizione del tema Material 3 dell'applicazione (colori, AppBar, card,
-// campi di input, pulsanti, navigation bar) a partire dalla palette AppColors.
 class AppTheme {
   static ThemeData get light {
     final base = ColorScheme.fromSeed(
