@@ -306,8 +306,8 @@ Sono state realizzate e integrate nell'app le seguenti feature avanzate:
         UC-1 & Inserisci viaggio        & UC-7 & Cerca e filtra elementi \\
         UC-2 & Consulta dettaglio viaggio & UC-8 & Visualizza statistiche \\
         UC-3 & Inserisci tappa          & UC-9 & Duplica viaggio \\
-        UC-4 & Inserisci attività       & UC-10 & Modifica o elimina elemento \\
-        UC-5 & Genera lista valigia     & UC-11 & Archivia o ripristina viaggio \\
+        UC-4 & Inserisci attività       & UC-10 & Archivia o ripristina viaggio \\
+        UC-5 & Genera lista valigia     & \\
         UC-6 & Registra spesa           &      & \\
         \bottomrule
     \end{tabularx}
@@ -347,38 +347,28 @@ esplicita prima di procedere (permette di registrare un viaggio già svolto).
 \textbf{Flusso alternativo (3a):} data incoerente con la tappa: il sistema segnala
 l'errore e richiede una nuova selezione di data/ora.
 
-\subsubsection*{UC-5: Genera lista valigia (feature avanzata)}
+\subsubsection*{UC-5: Genera lista valigia}
 \textbf{Attore:} Utente.\\
 \textbf{Precondizioni:} è aperto il dettaglio di un viaggio.\\
-\textbf{Postcondizioni:} la lista valigia è popolata con oggetti coerenti al tipo scelto.\\
+\textbf{Postcondizioni:} la lista valigia è popolata con oggetti \\
 \textbf{Flusso base:}
 \begin{enumerate}[nosep]
     \item L'utente apre la scheda ``Valigia'' e seleziona ``Genera''.
-    \item Il sistema mostra un menu con i tipi di viaggio disponibili.
-    \item L'utente sceglie il tipo (es. Mare).
-    \item Il sistema aggiunge alla checklist gli oggetti di base più quelli specifici del
-    tipo, evitando i duplicati già presenti.
+    \item Il sistema aggiunge alla checklist della valigia gli oggetti.
 \end{enumerate}
 
 \subsubsection*{UC-9: Duplica viaggio (feature avanzata)}
 \textbf{Attore:} Utente.\\
 \textbf{Precondizioni:} esiste il viaggio da duplicare.\\
-\textbf{Postcondizioni:} viene creato un nuovo viaggio ``(copia)'' con le tappe duplicate e,
-nella modalità completa, anche attività e checklist.\\
+\textbf{Postcondizioni:} viene creato un nuovo viaggio ``(copia)'' con le tappe duplicate e anche attività e checklist.\\
 \textbf{Flusso base:}
 \begin{enumerate}[nosep]
     \item L'utente seleziona ``Duplica'' su un viaggio.
-    \item Il sistema mostra un menu con le due modalità: \emph{copia completa} o
-    \emph{copia delle sole tappe}.
-    \item L'utente sceglie la modalità.
-    \item Il sistema crea il nuovo viaggio (stato ``futuro'').
+    \item Il sistema crea il nuovo viaggio.
     \item Il sistema duplica le tappe generando una mappa id originale$\rightarrow$id copia.
-    \item Solo in modalità completa, il sistema duplica attività e checklist ricollegandole
+    \item Il sistema duplica attività e checklist ricollegandole
     alle nuove tappe tramite la mappa.
-    \item Il sistema conferma l'operazione con una \texttt{SnackBar}.
 \end{enumerate}
-\textbf{Flusso alternativo (2a) --- annullamento:} se l'utente chiude il menu senza
-scegliere, l'operazione viene annullata e nessun viaggio viene creato.
 
 \subsubsection*{UC-11: Archivia o ripristina viaggio}
 \textbf{Attore:} Utente.\\
@@ -393,13 +383,6 @@ calcolato dalle date.\\
     \item Premendo di nuovo il pulsante (``Ripristina''), il sistema riporta il viaggio
     allo stato calcolato dalle date (futuro / in corso / completato).
 \end{enumerate}
-
-\subsubsection*{UC-10: Modifica o elimina elemento}
-\textbf{Attore:} Utente.\\
-\textbf{Flusso base:} l'utente sceglie ``Modifica'' o ``Elimina'' su viaggio, tappa,
-attività, checklist o spesa; nel caso di eliminazione il sistema chiede conferma tramite
-dialog e, se confermato, aggiorna il database e la vista. La cancellazione di un viaggio
-elimina in cascata tutti i dati collegati.
 
 % ===============================================================
 \section{Progettazione dell'app}
