@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../data/models/activity.dart';
 import '../data/repositories/activity_repository.dart';
+import '../providers/expense_provider.dart';
+import '../data/models/expense.dart';
 
 class ActivityProvider extends ChangeNotifier {
   final ActivityRepository _repo = ActivityRepository();
@@ -9,21 +11,23 @@ class ActivityProvider extends ChangeNotifier {
 
   final Map<String, List<Activity>> _activitiesByTrip = {};
 
-  List<Activity> getByTrip(String tripId) =>
-    List<Activity>.from(_activitiesByTrip[tripId] ?? [])
-      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+  List<Activity> getByTrip(String tripId) => List<Activity>.from(
+    _activitiesByTrip[tripId] ?? [],
+  )..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
 
-List<Activity> getByStage(String tripId, String stageId) =>
-    (_activitiesByTrip[tripId] ?? [])
-        .where((a) => a.stageId == stageId)
-        .toList()
-      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+  List<Activity> getByStage(String tripId, String stageId) =>
+      (_activitiesByTrip[tripId] ?? [])
+          .where((a) => a.stageId == stageId)
+          .toList()
+        ..sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
 
-List<Activity> getUnassigned(String tripId) =>
-    (_activitiesByTrip[tripId] ?? [])
-        .where((a) => a.stageId == null)
-        .toList()
-      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+  List<Activity> getUnassigned(String tripId) =>
+      (_activitiesByTrip[tripId] ?? []).where((a) => a.stageId == null).toList()
+        ..sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
 
   List<Activity> getByCategory(String tripId, ActivityCategory category) =>
       (_activitiesByTrip[tripId] ?? [])
@@ -74,6 +78,53 @@ List<Activity> getUnassigned(String tripId) =>
       list[idx] = activity;
       _activitiesByTrip[activity.tripId] = list;
       notifyListeners();
+    }
+  }
+
+  Future<void> updateActivityWithPlannedExpense(
+    Activity activity,
+    ExpenseProvider expenseProvider,
+  ) async {
+    await updateActivity(activity);
+
+    final expenses = expenseProvider.getByTrip(activity.tripId);
+    final plannedExpenses = expenses
+        .where(
+          (e) =>
+              e.activityId == activity.id && e.status == ExpenseStatus.planned,
+        )
+        .toList();
+
+    if (activity.estimatedCost == null) {
+      for (final e in plannedExpenses) {
+        await expenseProvider.deleteExpense(activity.tripId, e.id);
+      }
+      return;
+    }
+
+    if (plannedExpenses.isNotEmpty) {
+      final planned = plannedExpenses.first;
+      await expenseProvider.updateExpense(
+        planned.copyWith(
+          title: activity.title,
+          amount: activity.estimatedCost!,
+          date: activity.dateTime ?? planned.date,
+          stageId: activity.stageId,
+        ),
+      );
+    } else {
+      await expenseProvider.addExpense(
+        tripId: activity.tripId,
+        stageId: activity.stageId,
+        activityId: activity.id,
+        title: activity.title,
+        amount: activity.estimatedCost!,
+        category: ExpenseCategory.activity,
+        date: activity.dateTime ?? DateTime.now(),
+        paymentMethod: PaymentMethod.cash,
+        status: ExpenseStatus.planned,
+        notes: null,
+      );
     }
   }
 

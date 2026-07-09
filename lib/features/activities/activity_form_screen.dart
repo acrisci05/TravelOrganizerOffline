@@ -341,6 +341,10 @@ class _ActivityFormScreenState extends State<ActivityFormScreen> {
         );
 
         await activityProvider.updateActivity(updated);
+        await context.read<ActivityProvider>().updateActivityWithPlannedExpense(
+          updated,
+          context.read<ExpenseProvider>(),
+        );
 
         final allExpenses = expenseProvider.getByTrip(updated.tripId);
         final relatedExpenses = allExpenses
